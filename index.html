@@ -4,34 +4,104 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>WhatsApp Content Library</title>
+
+  <!-- Tailwind (CDN) -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Corporate Fonts -->
+  <!-- Headline/Subline: Montserrat; Serif Italic accent: Playfair Display; Signature accent: Great Vibes -->
+  <!-- If you have a Minion Pro license: replace Playfair with your Minion Pro webfont and swap the font-family in CSS -->
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@1,400;1,500;1,700&family=Great+Vibes&display=swap" rel="stylesheet">
+
   <link rel="icon" href="data:," />
   <style>
     :root{
-      --bg:#0b0b0c; --card:#111113; --muted:#1a1a1d; --muted-foreground:#9ca3af; --foreground:#e5e7eb;
-      --primary:#16a34a; --primary-foreground:#ecfdf5; --secondary:#0f766e; --secondary-foreground:#ecfeff;
+      /* Corporate Palette */
+      --brand-gold: #D6B160;
+      --brand-black: #000000;
+      --brand-white: #FFFFFF;
+
+      /* UI Surface Scale */
+      --bg:#0A0A0A;             /* deep black */
+      --card:#111113;           /* near-black card */
+      --muted:#151518;          /* soft dark for inputs/bubbles */
+      --muted-foreground:#B8BDC7; /* cool grey text for meta */
+      --foreground:#FFFFFF;     /* primary text */
+
+      /* Component Accents (aligned to brand) */
+      --primary: var(--brand-gold);
+      --primary-contrast: #1a1300; /* readable gold-on-black contrast on hover focus rings */
+      --chip-bg:#1C1A14;       /* gold-tinted chip bg */
+      --chip-text:#F8E9C4;     /* light gold text */
+      --border: rgba(255,255,255,.08);
+      --border-strong: rgba(255,255,255,.12);
+      --shadow: 0 8px 24px rgba(0,0,0,.35);
     }
-    body{background:var(--bg); color:var(--foreground)}
-    .card{background:var(--card); border:1px solid rgba(255,255,255,0.06)}
-    .bg-muted{background:var(--muted)}
-    .text-muted-foreground{color:var(--muted-foreground)}
-    .bg-primary{background:var(--primary)}
-    .text-primary-foreground{color:var(--primary-foreground)}
-    .bg-secondary{background:var(--secondary)}
-    .text-secondary-foreground{color:var(--secondary-foreground)}
-    .chip{border-radius:9999px; padding:2px 8px; font-size:12px}
-    .btn{display:inline-flex; align-items:center; gap:.5rem; border:1px solid rgba(255,255,255,.12); padding:.5rem .75rem; border-radius:.75rem}
-    .btn:hover{background:rgba(255,255,255,.06)}
+
+    /* Typography */
+    html, body { font-family: "Montserrat", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    .h1 { font-weight: 800; letter-spacing: .02em; }
+    .accent-italic { font-family: "Playfair Display", Georgia, "Times New Roman", serif; font-style: italic; }
+    .signature { font-family: "Great Vibes", cursive; }
+
+    /* Base Surfaces */
+    body{ background:var(--bg); color:var(--foreground); }
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    /* Buttons */
+    .btn{
+      display:inline-flex; align-items:center; gap:.5rem;
+      border:1px solid var(--border-strong);
+      padding:.55rem .85rem; border-radius:.9rem; transition:.15s ease;
+      background:transparent; color:var(--foreground);
+    }
+    .btn:hover{ background:rgba(255,255,255,.06) }
+    .btn-primary{
+      background: var(--primary); color: var(--brand-black);
+      border-color: color-mix(in oklab, var(--primary), #000 20%);
+      font-weight: 600;
+    }
+    .btn-primary:hover{ filter: brightness(1.05); }
+    .btn-outline{
+      border-color: var(--primary); color: var(--primary);
+    }
+    .btn-outline:hover{ background: rgba(214,177,96,.08); }
+
+    /* Chips */
+    .chip{
+      display:inline-flex; align-items:center; gap:.35rem;
+      background: var(--chip-bg); color: var(--chip-text);
+      border:1px solid color-mix(in oklab, var(--primary), #000 70%);
+      border-radius: 9999px; padding: 2px 10px; font-size: 12px;
+    }
+
+    /* Inputs */
+    .input, .select, .textarea {
+      width:100%; border-radius: 10px; border:1px solid var(--border-strong);
+      background: var(--muted); color: var(--foreground);
+      padding: .6rem .75rem; outline: none;
+    }
+    .input:focus, .select:focus, .textarea:focus{
+      box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary), #000 70%);
+      border-color: var(--primary);
+    }
+    label { color: var(--muted-foreground); font-size: .9rem; }
 
     /* WhatsApp-like preview bubble */
     .wa-preview{
-      background: #111a10;
-      border: 1px solid rgba(255,255,255,.06);
+      background: #12130F;
+      border: 1px solid color-mix(in oklab, var(--primary), #000 75%);
       border-radius: 16px;
       padding: 12px 14px;
-      font-size: .95rem;
-      line-height: 1.45;
+      font-size: .96rem;
+      line-height: 1.55;
       white-space: pre-wrap;
     }
     .wa-preview b{font-weight:700}
@@ -39,280 +109,309 @@
     .wa-preview s{text-decoration:line-through;opacity:.9}
     .wa-preview code{
       font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
-      background: rgba(255,255,255,.08);
+      background: rgba(255,255,255,.06);
       padding: 0 4px; border-radius: 4px;
     }
+
+    /* Gold dividers */
+    .divider { height:1px; background: color-mix(in oklab, var(--primary), #000 75%); }
+
+    /* Fixed-height card layout (scrollable preview in the middle) */
+    .fixed-card { height: 420px; display:flex; flex-direction:column; }
+    .card-preview { flex:1; min-height:120px; overflow-y:auto; }
   </style>
 </head>
 <body class="min-h-screen p-6">
   <div class="max-w-6xl mx-auto space-y-6">
     <header class="flex justify-between items-center">
-      <h1 class="text-3xl font-bold flex items-center gap-2">
-        <i data-lucide="message-circle"></i> WhatsApp Content Library
+      <h1 class="h1 text-3xl flex items-center gap-3">
+        <i data-lucide="message-circle"></i>
+        WhatsApp Content Library
       </h1>
       <div class="flex gap-2">
-        <button id="syncBtn" class="btn"><i data-lucide="refresh-cw"></i> Sync Now</button>
-        <button id="addBtn" class="btn bg-green-600 text-white"><i data-lucide="plus"></i> Add Content</button>
+        <button id="syncBtn" class="btn btn-outline"><i data-lucide="refresh-cw"></i> Sync Now</button>
+        <button id="addBtn" class="btn btn-primary"><i data-lucide="plus"></i> Add Content</button>
       </div>
     </header>
 
     <!-- Add Content Modal (sticky header/footer, scrollable body) -->
     <div id="addModal" class="fixed inset-0 bg-black/60 hidden p-4 z-50">
       <div class="card w-full max-w-xl mx-auto rounded-xl max-h-[90vh] overflow-hidden flex flex-col">
-        <!-- Header (sticky) -->
-        <div class="flex justify-between items-center p-4 border-b border-white/10 sticky top-0 bg-[var(--card)] z-10">
-          <h2 class="text-xl font-semibold">Add New Content</h2>
+        <!-- Header -->
+        <div class="flex justify-between items-center p-4 sticky top-0 bg-[var(--card)] z-10">
+          <h2 class="text-xl font-semibold">Add New Content <span class="accent-italic text-[0.95rem] opacity-80">– fast & on-brand</span></h2>
           <button id="closeModal" class="btn"><i data-lucide="x"></i></button>
         </div>
+        <div class="divider"></div>
 
         <!-- Body (scrolls) -->
-        <div class="p-4 space-y-3 overflow-y-auto flex-1">
+        <div class="p-4 space-y-4 overflow-y-auto flex-1">
           <div>
-            <label class="block text-sm mb-1">Title</label>
-            <input id="titleInput" class="w-full p-2 rounded bg-muted" placeholder="Content title..." />
+            <label class="block mb-1">Title</label>
+            <input id="titleInput" class="input" placeholder="Content title..." />
           </div>
           <div>
-            <label class="block text-sm mb-1">Category</label>
-            <select id="categoryInput" class="w-full p-2 rounded bg-muted"></select>
+            <label class="block mb-1">Category</label>
+            <select id="categoryInput" class="select"></select>
           </div>
           <div>
-            <label class="block text-sm mb-1">Content</label>
-            <textarea id="contentInput" class="w-full p-2 rounded bg-muted" rows="6"
-              placeholder="Write your message... Use **bold**, __italic__, ~~strikethrough~~, and `code`."></textarea>
+            <label class="block mb-1">Content</label>
+            <textarea id="contentInput" class="textarea" rows="6" placeholder="Use **bold**, __italic__, ~~strikethrough~~, and `code`."></textarea>
           </div>
           <div>
-            <label class="block text-sm mb-1">Tags (comma separated)</label>
-            <input id="tagsInput" class="w-full p-2 rounded bg-muted" placeholder="motivation, weekly, inspiration" />
+            <label class="block mb-1">Tags (comma separated)</label>
+            <input id="tagsInput" class="input" placeholder="motivation, weekly, inspiration" />
           </div>
           <div>
-            <label class="block text-sm mb-1">WhatsApp Preview</label>
+            <label class="block mb-1">WhatsApp Preview</label>
             <div id="waPreview" class="wa-preview max-h-56 overflow-y-auto">(start typing above)</div>
           </div>
         </div>
+        <div class="divider"></div>
 
-        <!-- Footer (sticky) -->
-        <div class="p-4 flex justify-end gap-2 border-t border-white/10 sticky bottom-0 bg-[var(--card)] z-10">
+        <!-- Footer -->
+        <div class="p-4 flex justify-end gap-2 sticky bottom-0 bg-[var(--card)] z-10">
           <button id="clearAdd" class="btn">Clear</button>
           <button id="cancelAdd" class="btn">Cancel</button>
-          <button id="saveAdd" class="btn bg-green-600 text-white">Save</button>
+          <button id="saveAdd" class="btn btn-primary">Save</button>
         </div>
       </div>
     </div>
 
     <section>
       <div class="flex gap-2 mb-4">
-        <input id="searchInput" placeholder="Search..." class="flex-1 p-2 rounded bg-muted" />
-        <select id="categorySelect" class="p-2 rounded bg-muted">
+        <input id="searchInput" placeholder="Search..." class="input flex-1" />
+        <select id="categorySelect" class="select w-[220px]">
           <option value="all">All Categories</option>
         </select>
       </div>
       <div id="contentGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
     </section>
 
-    <section class="card p-4">
-      <h2 class="font-semibold mb-2">Content Statistics</h2>
+    <section class="card p-5">
+      <h2 class="font-semibold text-lg mb-2">Content Statistics</h2>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-        <div><div id="statTotal" class="text-2xl font-bold">0</div><div class="text-muted-foreground">Total Content</div></div>
-        <div><div id="statUses" class="text-2xl font-bold">0</div><div class="text-muted-foreground">Total Uses</div></div>
-        <div><div id="statCategories" class="text-2xl font-bold">0</div><div class="text-muted-foreground">Categories</div></div>
-        <div><div id="statRecent" class="text-2xl font-bold">0</div><div class="text-muted-foreground">Recently Used</div></div>
+        <div>
+          <div id="statTotal" class="text-2xl font-extrabold" style="color:var(--primary)">0</div>
+          <div class="text-sm" style="color:var(--muted-foreground)">Total Content</div>
+        </div>
+        <div>
+          <div id="statUses" class="text-2xl font-extrabold" style="color:var(--primary)">0</div>
+          <div class="text-sm" style="color:var(--muted-foreground)">Total Uses</div>
+        </div>
+        <div>
+          <div id="statCategories" class="text-2xl font-extrabold" style="color:var(--primary)">0</div>
+          <div class="text-sm" style="color:var(--muted-foreground)">Categories</div>
+        </div>
+        <div>
+          <div id="statRecent" class="text-2xl font-extrabold" style="color:var(--primary)">0</div>
+          <div class="text-sm" style="color:var(--muted-foreground)">Recently Used</div>
+        </div>
       </div>
     </section>
   </div>
 
-<script>
-  // ===== Config =====
-  const API = 'https://whatsapp-content-library.vercel.app/api/contents';
-  const categories = ['Motivation','Tech Tips','Fun Facts','Announcements','Events','Educational'];
+  <script>
+    // ===== Config =====
+    const API = 'https://whatsapp-content-library.vercel.app/api/contents';
+    const categories = ['Motivation','Tech Tips','Fun Facts','Announcements','Events','Educational'];
 
-  // ===== State =====
-  lucide.createIcons();
-  let contents = [];
+    // ===== State =====
+    lucide.createIcons();
+    let contents = [];
 
-  // ===== Utils =====
-  const escapeHtml = (str='') => str.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
-  // Visual-only renderer for WhatsApp-style formatting
-  const whatsappPreviewHTML = (raw='') => {
-    let s = escapeHtml(raw);
-    // Markdown markers
-    s = s.replace(/\*\*(.*?)\*\*/gs,'<b>$1</b>');
-    s = s.replace(/__(.*?)__/gs,'<i>$1</i>');
-    s = s.replace(/~~(.*?)~~/gs,'<s>$1</s>');
-    // WhatsApp markers
-    s = s.replace(/\*(.*?)\*/gs,'<b>$1</b>');
-    s = s.replace(/_(.*?)_/gs,'<i>$1</i>');
-    s = s.replace(/~(.*?)~/gs,'<s>$1</s>');
-    // Inline code
-    s = s.replace(/`([^`]+)`/g,'<code>$1</code>');
-    // Line breaks
-    return s.replace(/\n/g,'<br/>');
-  };
-
-  // ===== API Calls =====
-  async function syncContents(){
-    try{
-      const res = await fetch(API);
-      if(!res.ok) throw new Error('HTTP '+res.status);
-      const data = await res.json();
-      contents = Array.isArray(data.items) ? data.items : [];
-      renderCategories();
-      render();
-    }catch(e){ console.error('Sync failed', e); alert('Sync failed: '+e.message); }
-  }
-
-  async function createItem(){
-    const title = (titleInput.value||'').trim();
-    const category = categoryInput.value || 'General';
-    const content = (contentInput.value||'').trim();
-    const tags = (tagsInput.value||'').split(',').map(t=>t.trim()).filter(Boolean);
-    if(!title || !content){ alert('Please fill in both title and content.'); return; }
-
-    const body = {
-      title,
-      content,                    // keep original author text
-      formattedContent: content,  // save same text (already WA-compatible markers)
-      category,
-      tags,
-      dateCreated: new Date().toISOString().slice(0,10),
-      useCount: 0
+    // ===== Utils =====
+    const escapeHtml = (str='') => str.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+    // Visual WhatsApp-style render
+    const whatsappPreviewHTML = (raw='') => {
+      let s = escapeHtml(raw);
+      // Markdown markers
+      s = s.replace(/\*\*(.*?)\*\*/gs,'<b>$1</b>');
+      s = s.replace(/__(.*?)__/gs,'<i>$1</i>');
+      s = s.replace(/~~(.*?)~~/gs,'<s>$1</s>');
+      // WhatsApp markers
+      s = s.replace(/\*(.*?)\*/gs,'<b>$1</b>');
+      s = s.replace(/_(.*?)_/gs,'<i>$1</i>');
+      s = s.replace(/~(.*?)~/gs,'<s>$1</s>');
+      // Inline code
+      s = s.replace(/`([^`]+)`/g,'<code>$1</code>');
+      // Line breaks
+      return s.replace(/\n/g,'<br/>');
     };
 
-    try{
-      const r = await fetch(API, {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify(body)
-      });
-      if(!r.ok){
-        let msg='HTTP '+r.status;
-        try{ const j = await r.json(); if(j && (j.message||j.error)) msg = (j.message||j.error); }
-        catch(_){ const t = await r.text(); if(t) msg=t; }
-        throw new Error(msg);
-      }
-      closeModalFn();
-      clearForm();                // reset for next add
-      await syncContents();
-      alert('Content added!');
-    }catch(err){ console.error(err); alert('Failed to add content: '+err.message); }
-  }
+    // ===== API Calls =====
+    async function syncContents(){
+      try{
+        const res = await fetch(API);
+        if(!res.ok) throw new Error('HTTP '+res.status);
+        const data = await res.json();
+        contents = Array.isArray(data.items) ? data.items : [];
+        renderCategories();
+        render();
+      }catch(e){ console.error('Sync failed', e); alert('Sync failed: '+e.message); }
+    }
 
-  // ===== Rendering =====
-  function render(){
-    const grid = document.getElementById('contentGrid');
-    const search = (document.getElementById('searchInput').value||'').toLowerCase();
-    const cat = document.getElementById('categorySelect').value;
-    let filtered = contents.filter(c =>
-      (!search || (c.title||'').toLowerCase().includes(search) || (c.content||'').toLowerCase().includes(search) || (c.tags||[]).some(t => (t||'').toLowerCase().includes(search))) &&
-      (cat==='all' || c.category===cat)
-    );
+    async function createItem(){
+      const title = (titleInput.value||'').trim();
+      const category = categoryInput.value || 'General';
+      const content = (contentInput.value||'').trim();
+      const tags = (tagsInput.value||'').split(',').map(t=>t.trim()).filter(Boolean);
+      if(!title || !content){ alert('Please fill in both title and content.'); return; }
 
-    grid.innerHTML = filtered.map(c => `
-      <div class="card p-4 space-y-3 rounded-xl">
-        <div class="flex justify-between items-start">
+      const body = {
+        title,
+        content,
+        formattedContent: content,   // save same text (WhatsApp markers)
+        category,
+        tags,
+        dateCreated: new Date().toISOString().slice(0,10),
+        useCount: 0
+      };
+
+      try{
+        const r = await fetch(API, {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify(body)
+        });
+        if(!r.ok){
+          let msg='HTTP '+r.status;
+          try{ const j = await r.json(); if(j && (j.message||j.error)) msg = (j.message||j.error); }
+          catch(_){ const t = await r.text(); if(t) msg=t; }
+          throw new Error(msg);
+        }
+        closeModalFn();
+        clearForm();
+        await syncContents();
+        alert('Content added!');
+      }catch(err){ console.error(err); alert('Failed to add content: '+err.message); }
+    }
+
+    // ===== Rendering =====
+    function render(){
+      const grid = document.getElementById('contentGrid');
+      const search = (document.getElementById('searchInput').value||'').toLowerCase();
+      const cat = document.getElementById('categorySelect').value;
+      let filtered = contents.filter(c =>
+        (!search || (c.title||'').toLowerCase().includes(search) || (c.content||'').toLowerCase().includes(search) || (c.tags||[]).some(t => (t||'').toLowerCase().includes(search))) &&
+        (cat==='all' || c.category===cat)
+      );
+
+      grid.innerHTML = filtered.map(c => `
+        <div class="card p-4 fixed-card">
+          <!-- Header -->
           <div>
-            <h3 class="font-semibold">${escapeHtml(c.title||'')}</h3>
-            <div class="flex items-center gap-2 mt-1">
-              <span class="chip bg-primary text-primary-foreground">${escapeHtml(c.category||'')}</span>
-              <span class="text-xs text-muted-foreground">Used ${Number(c.useCount||0)} times</span>
+            <div class="flex justify-between items-start">
+              <div>
+                <h3 class="font-semibold text-[1.05rem]">${escapeHtml(c.title||'')}</h3>
+                <div class="flex items-center gap-2 mt-1">
+                  <span class="chip"><span style="width:.4rem;height:.4rem;background:var(--primary);border-radius:9999px;display:inline-block"></span>${escapeHtml(c.category||'')}</span>
+                  <span class="text-xs" style="color:var(--muted-foreground)">Used ${Number(c.useCount||0)} times</span>
+                </div>
+              </div>
+              <div class="flex gap-2">
+                <button class="btn btn-outline copyBtn" data-id="${escapeHtml(c.id||'')}"><i data-lucide="copy"></i>Copy</button>
+              </div>
             </div>
           </div>
-          <div class="flex gap-2">
-            <button class="btn copyBtn" data-id="${escapeHtml(c.id||'')}"><i data-lucide="copy"></i>Copy</button>
+
+          <!-- Preview -->
+          <div class="mt-3 card-preview">
+            <div class="wa-preview">${whatsappPreviewHTML(c.content||'')}</div>
+          </div>
+
+          <!-- Footer/meta -->
+          <div class="mt-3">
+            <div class="flex flex-wrap gap-1 mb-2">
+              ${(c.tags||[]).map(t=>`<span class='chip'>#${escapeHtml(t)}</span>`).join('')}
+            </div>
+            <div class="text-xs flex justify-between" style="color:var(--muted-foreground)">
+              <span>Created: ${escapeHtml(c.dateCreated||'')}</span>
+              ${c.lastUsed ? `<span>Last used: ${escapeHtml(c.lastUsed)}</span>` : '<span></span>'}
+            </div>
           </div>
         </div>
+      `).join('');
 
-        <!-- WhatsApp-style preview in the card -->
-        <div class="wa-preview">${whatsappPreviewHTML(c.content||'')}</div>
-
-        <div class="flex flex-wrap gap-1">
-          ${(c.tags||[]).map(t=>`<span class='chip bg-secondary text-secondary-foreground'>#${escapeHtml(t)}</span>`).join('')}
-        </div>
-        <div class="text-xs text-muted-foreground flex justify-between">
-          <span>Created: ${escapeHtml(c.dateCreated||'')}</span>
-          ${c.lastUsed ? `<span>Last used: ${escapeHtml(c.lastUsed)}</span>` : '<span></span>'}
-        </div>
-      </div>
-    `).join('');
-
-    document.querySelectorAll('.copyBtn').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        const id = btn.getAttribute('data-id');
-        copyToClipboard(id);
+      document.querySelectorAll('.copyBtn').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          const id = btn.getAttribute('data-id');
+          copyToClipboard(id);
+        });
       });
+
+      document.getElementById('statTotal').textContent = contents.length;
+      document.getElementById('statUses').textContent = contents.reduce((a,c)=>a+(c.useCount||0),0);
+      document.getElementById('statCategories').textContent = new Set(contents.map(c=>c.category)).size;
+      document.getElementById('statRecent').textContent = contents.filter(c=>c.lastUsed).length;
+
+      lucide.createIcons();
+    }
+
+    function renderCategories(){
+      const sel = document.getElementById('categorySelect');
+      const current = sel.value || 'all';
+      sel.innerHTML = '<option value="all">All Categories</option>' + categories.map(c=>`<option value="${c}">${c}</option>`).join('');
+      sel.value = current;
+
+      const modalSel = document.getElementById('categoryInput');
+      modalSel.innerHTML = categories.map(c=>`<option value="${c}">${c}</option>`).join('');
+    }
+
+    async function copyToClipboard(id){
+      try{
+        const item = contents.find(x=>String(x.id)===String(id));
+        if(!item) return alert('Item not found.');
+        await navigator.clipboard.writeText(item.content||'');
+        item.useCount = Number(item.useCount||0) + 1;
+        item.lastUsed = new Date().toISOString().slice(0,10);
+        render();
+        alert('Copied to clipboard!');
+      }catch(e){ console.error(e); alert('Copy failed.'); }
+    }
+
+    // ===== Modal & Events =====
+    const addBtn = document.getElementById('addBtn');
+    const syncBtn = document.getElementById('syncBtn');
+    const addModal = document.getElementById('addModal');
+    const closeModal = document.getElementById('closeModal');
+    const cancelAdd = document.getElementById('cancelAdd');
+    const saveAdd = document.getElementById('saveAdd');
+    const clearBtn = document.getElementById('clearAdd');
+    const titleInput = document.getElementById('titleInput');
+    const categoryInput = document.getElementById('categoryInput');
+    const contentInput = document.getElementById('contentInput');
+    const tagsInput = document.getElementById('tagsInput');
+    const waPreview = document.getElementById('waPreview');
+
+    function openModal(){ addModal.classList.remove('hidden'); titleInput.focus(); }
+    function closeModalFn(){ addModal.classList.add('hidden'); }
+
+    function clearForm(){
+      titleInput.value = '';
+      categoryInput.value = '';
+      contentInput.value = '';
+      tagsInput.value = '';
+      waPreview.innerHTML = '(start typing above)';
+      titleInput.focus();
+    }
+
+    addBtn.addEventListener('click', openModal);
+    closeModal.addEventListener('click', closeModalFn);
+    cancelAdd.addEventListener('click', closeModalFn);
+    clearBtn.addEventListener('click', clearForm);
+    saveAdd.addEventListener('click', createItem);
+
+    contentInput.addEventListener('input', ()=>{ waPreview.innerHTML = whatsappPreviewHTML(contentInput.value||''); });
+    document.getElementById('searchInput').addEventListener('input', render);
+    document.getElementById('categorySelect').addEventListener('change', render);
+    syncBtn.addEventListener('click', syncContents);
+
+    // Boot
+    window.addEventListener('DOMContentLoaded', () => {
+      renderCategories();
+      syncContents();
     });
-
-    document.getElementById('statTotal').textContent = contents.length;
-    document.getElementById('statUses').textContent = contents.reduce((a,c)=>a+(c.useCount||0),0);
-    document.getElementById('statCategories').textContent = new Set(contents.map(c=>c.category)).size;
-    document.getElementById('statRecent').textContent = contents.filter(c=>c.lastUsed).length;
-
-    lucide.createIcons();
-  }
-
-  function renderCategories(){
-    const sel = document.getElementById('categorySelect');
-    const current = sel.value || 'all';
-    sel.innerHTML = '<option value="all">All Categories</option>' + categories.map(c=>`<option value="${c}">${c}</option>`).join('');
-    sel.value = current;
-
-    const modalSel = document.getElementById('categoryInput');
-    modalSel.innerHTML = categories.map(c=>`<option value="${c}">${c}</option>`).join('');
-  }
-
-  async function copyToClipboard(id){
-    try{
-      const item = contents.find(x=>String(x.id)===String(id));
-      if(!item) return alert('Item not found.');
-      await navigator.clipboard.writeText(item.content||'');
-      item.useCount = Number(item.useCount||0) + 1;
-      item.lastUsed = new Date().toISOString().slice(0,10);
-      render();
-      alert('Copied to clipboard!');
-    }catch(e){ console.error(e); alert('Copy failed.'); }
-  }
-
-  // ===== Modal & Events =====
-  const addBtn = document.getElementById('addBtn');
-  const syncBtn = document.getElementById('syncBtn');
-  const addModal = document.getElementById('addModal');
-  const closeModal = document.getElementById('closeModal');
-  const cancelAdd = document.getElementById('cancelAdd');
-  const saveAdd = document.getElementById('saveAdd');
-  const clearBtn = document.getElementById('clearAdd');
-  const titleInput = document.getElementById('titleInput');
-  const categoryInput = document.getElementById('categoryInput');
-  const contentInput = document.getElementById('contentInput');
-  const tagsInput = document.getElementById('tagsInput');
-  const waPreview = document.getElementById('waPreview');
-
-  function openModal(){ addModal.classList.remove('hidden'); titleInput.focus(); }
-  function closeModalFn(){ addModal.classList.add('hidden'); }
-
-  function clearForm(){
-    titleInput.value = '';
-    categoryInput.value = '';
-    contentInput.value = '';
-    tagsInput.value = '';
-    waPreview.innerHTML = '(start typing above)';
-    titleInput.focus();
-  }
-
-  addBtn.addEventListener('click', openModal);
-  closeModal.addEventListener('click', closeModalFn);
-  cancelAdd.addEventListener('click', closeModalFn);
-  clearBtn.addEventListener('click', clearForm);
-  saveAdd.addEventListener('click', createItem);
-
-  contentInput.addEventListener('input', ()=>{ waPreview.innerHTML = whatsappPreviewHTML(contentInput.value||''); });
-  document.getElementById('searchInput').addEventListener('input', render);
-  document.getElementById('categorySelect').addEventListener('change', render);
-  syncBtn.addEventListener('click', syncContents);
-
-  // Boot
-  window.addEventListener('DOMContentLoaded', () => {
-    renderCategories();
-    syncContents();
-  });
-</script>
+  </script>
 </body>
 </html>
