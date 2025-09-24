@@ -9,7 +9,8 @@
   <link rel="icon" href="data:," />
   <style>
     :root{
-      --bg:#0b0b0c; --card:#111113; --muted:#1a1a1d; --muted-foreground:#9ca3af; --foreground:#e5e7eb; --primary:#16a34a; --primary-foreground:#ecfdf5; --secondary:#0f766e; --secondary-foreground:#ecfeff;
+      --bg:#0b0b0c; --card:#111113; --muted:#1a1a1d; --muted-foreground:#9ca3af; --foreground:#e5e7eb;
+      --primary:#16a34a; --primary-foreground:#ecfdf5; --secondary:#0f766e; --secondary-foreground:#ecfeff;
     }
     body{background:var(--bg); color:var(--foreground)}
     .card{background:var(--card); border:1px solid rgba(255,255,255,0.06)}
@@ -22,6 +23,26 @@
     .chip{border-radius:9999px; padding:2px 8px; font-size:12px}
     .btn{display:inline-flex; align-items:center; gap:.5rem; border:1px solid rgba(255,255,255,.12); padding:.5rem .75rem; border-radius:.75rem}
     .btn:hover{background:rgba(255,255,255,.06)}
+
+    /* WhatsApp-like preview bubble */
+    .wa-preview {
+      background: #111a10;
+      border: 1px solid rgba(255,255,255,.06);
+      border-radius: 16px;
+      padding: 12px 14px;
+      font-size: 0.95rem;
+      line-height: 1.45;
+      white-space: pre-wrap;
+    }
+    .wa-preview strong { font-weight: 700; }
+    .wa-preview em { font-style: italic; }
+    .wa-preview s { text-decoration: line-through; opacity: .9; }
+    .wa-preview code {
+      font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+      background: rgba(255,255,255,.06);
+      padding: 0 4px;
+      border-radius: 4px;
+    }
   </style>
 </head>
 <body class="min-h-screen p-6">
@@ -37,8 +58,8 @@
     </header>
 
     <!-- Add Content Modal -->
-<div id="addModal" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center p-4 z-50 overflow-y-auto">
-  <div class="card w-full max-w-xl p-4 rounded-xl max-h-[90vh] overflow-y-auto relative">
+    <div id="addModal" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center p-4 z-50 overflow-y-auto">
+      <div class="card w-full max-w-xl p-4 rounded-xl max-h-[90vh] overflow-y-auto relative">
         <div class="flex justify-between items-center mb-3">
           <h2 class="text-xl font-semibold">Add New Content</h2>
           <button id="closeModal" class="btn"><i data-lucide="x"></i></button>
@@ -62,7 +83,7 @@
           </div>
           <div>
             <label class="block text-sm mb-1">WhatsApp Preview</label>
-            <div class="bg-muted p-2 rounded text-sm" id="waPreview">(start typing above)</div>
+            <div id="waPreview" class="wa-preview">(start typing above)</div>
           </div>
           <div class="flex justify-end gap-2">
             <button id="cancelAdd" class="btn">Cancel</button>
@@ -109,6 +130,29 @@
     .replace(/__(.*?)__/g,'_$1_')
     .replace(/~~(.*?)~~/g,'~$1~')
     .replace(/`(.*?)`/g,'$1');
+
+  // Render WhatsApp-style preview
+  function whatsappPreviewHTML(raw = '') {
+    const esc = (s='') => s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+    let s = esc(raw);
+
+    // Markdown style
+    s = s.replace(/\*\*(.*?)\*\*/gs, '<strong>$1</strong>');
+    s = s.replace(/__(.*?)__/gs, '<em>$1</em>');
+    s = s.replace(/~~(.*?)~~/gs, '<s>$1</s>');
+
+    // WhatsApp style
+    s = s.replace(/\*(.*?)\*/gs, '<strong>$1</strong>');
+    s = s.replace(/_(.*?)_/gs, '<em>$1</em>');
+    s = s.replace(/~(.*?)~/gs, '<s>$1</s>');
+
+    // Inline code
+    s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+    // Line breaks
+    s = s.replace(/\n/g, '<br/>');
+    return s;
+  }
 
   // ===== API Calls =====
   async function syncContents(){
@@ -226,7 +270,6 @@
       item.lastUsed = new Date().toISOString().slice(0,10);
       render();
       alert('Copied to clipboard!');
-      // (Optional) You could POST an update endpoint to persist useCount/lastUsed back to Notion
     }catch(e){ console.error(e); alert('Copy failed.'); }
   }
 
@@ -251,7 +294,11 @@
   cancelAdd.addEventListener('click', closeModalFn);
   saveAdd.addEventListener('click', createItem);
 
-  contentInput.addEventListener('input', ()=>{ waPreview.textContent = formatForWhatsApp(contentInput.value||''); });
+  // 🔥 live WhatsApp-like preview
+  contentInput.addEventListener('input', () => {
+    waPreview.innerHTML = whatsappPreviewHTML(contentInput.value || '');
+  });
+
   document.getElementById('searchInput').addEventListener('input', render);
   document.getElementById('categorySelect').addEventListener('change', render);
   syncBtn.addEventListener('click', syncContents);
