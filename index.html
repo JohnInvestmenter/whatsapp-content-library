@@ -9,8 +9,7 @@
   <link rel="icon" href="data:," />
   <style>
     :root{
-      --bg:#0b0b0c; --card:#111113; --muted:#1a1a1d; --muted-foreground:#9ca3af; --foreground:#e5e7eb;
-      --primary:#16a34a; --primary-foreground:#ecfdf5; --secondary:#0f766e; --secondary-foreground:#ecfeff;
+      --bg:#0b0b0c; --card:#111113; --muted:#1a1a1d; --muted-foreground:#9ca3af; --foreground:#e5e7eb; --primary:#16a34a; --primary-foreground:#ecfdf5; --secondary:#0f766e; --secondary-foreground:#ecfeff;
     }
     body{background:var(--bg); color:var(--foreground)}
     .card{background:var(--card); border:1px solid rgba(255,255,255,0.06)}
@@ -23,25 +22,23 @@
     .chip{border-radius:9999px; padding:2px 8px; font-size:12px}
     .btn{display:inline-flex; align-items:center; gap:.5rem; border:1px solid rgba(255,255,255,.12); padding:.5rem .75rem; border-radius:.75rem}
     .btn:hover{background:rgba(255,255,255,.06)}
-
-    /* WhatsApp-like preview bubble */
+    /* WhatsApp preview styling */
     .wa-preview {
-      background: #111a10;
-      border: 1px solid rgba(255,255,255,.06);
-      border-radius: 16px;
-      padding: 12px 14px;
+      background: var(--muted);
+      padding: 0.75rem;
+      border-radius: 0.5rem;
       font-size: 0.95rem;
-      line-height: 1.45;
+      line-height: 1.5;
       white-space: pre-wrap;
     }
-    .wa-preview strong { font-weight: 700; }
-    .wa-preview em { font-style: italic; }
-    .wa-preview s { text-decoration: line-through; opacity: .9; }
+    .wa-preview b { font-weight: bold; }
+    .wa-preview i { font-style: italic; }
+    .wa-preview s { text-decoration: line-through; }
     .wa-preview code {
-      font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
-      background: rgba(255,255,255,.06);
-      padding: 0 4px;
+      background: rgba(255,255,255,.1);
+      padding: 2px 4px;
       border-radius: 4px;
+      font-family: monospace;
     }
   </style>
 </head>
@@ -58,8 +55,8 @@
     </header>
 
     <!-- Add Content Modal -->
-    <div id="addModal" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center p-4 z-50 overflow-y-auto">
-      <div class="card w-full max-w-xl p-4 rounded-xl max-h-[90vh] overflow-y-auto relative">
+    <div id="addModal" class="fixed inset-0 bg-black/60 hidden items-center justify-center p-4 z-50 overflow-y-auto">
+      <div class="card w-full max-w-xl p-4 rounded-xl">
         <div class="flex justify-between items-center mb-3">
           <h2 class="text-xl font-semibold">Add New Content</h2>
           <button id="closeModal" class="btn"><i data-lucide="x"></i></button>
@@ -83,7 +80,7 @@
           </div>
           <div>
             <label class="block text-sm mb-1">WhatsApp Preview</label>
-            <div id="waPreview" class="wa-preview">(start typing above)</div>
+            <div class="wa-preview" id="waPreview">(start typing above)</div>
           </div>
           <div class="flex justify-end gap-2">
             <button id="cancelAdd" class="btn">Cancel</button>
@@ -125,34 +122,15 @@
 
   // ===== Utils =====
   const escapeHtml = (str='') => str.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
-  const formatForWhatsApp = (text='') => text
-    .replace(/\*\*(.*?)\*\*/g,'*$1*')
-    .replace(/__(.*?)__/g,'_$1_')
-    .replace(/~~(.*?)~~/g,'~$1~')
-    .replace(/`(.*?)`/g,'$1');
-
-  // Render WhatsApp-style preview
-  function whatsappPreviewHTML(raw = '') {
-    const esc = (s='') => s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
-    let s = esc(raw);
-
-    // Markdown style
-    s = s.replace(/\*\*(.*?)\*\*/gs, '<strong>$1</strong>');
-    s = s.replace(/__(.*?)__/gs, '<em>$1</em>');
-    s = s.replace(/~~(.*?)~~/gs, '<s>$1</s>');
-
-    // WhatsApp style
-    s = s.replace(/\*(.*?)\*/gs, '<strong>$1</strong>');
-    s = s.replace(/_(.*?)_/gs, '<em>$1</em>');
-    s = s.replace(/~(.*?)~/gs, '<s>$1</s>');
-
-    // Inline code
-    s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
-
-    // Line breaks
-    s = s.replace(/\n/g, '<br/>');
-    return s;
-  }
+  const whatsappPreviewHTML = (text='') => {
+    return escapeHtml(text)
+      .replace(/\*\*(.*?)\*\*/g,'<b>$1</b>')
+      .replace(/\*(.*?)\*/g,'<b>$1</b>')
+      .replace(/__(.*?)__/g,'<i>$1</i>')
+      .replace(/_(.*?)_/g,'<i>$1</i>')
+      .replace(/~~(.*?)~~/g,'<s>$1</s>')
+      .replace(/`(.*?)`/g,'<code>$1</code>');
+  };
 
   // ===== API Calls =====
   async function syncContents(){
@@ -176,7 +154,7 @@
     const body = {
       title,
       content,
-      formattedContent: formatForWhatsApp(content),
+      formattedContent: content,
       category,
       tags,
       dateCreated: new Date().toISOString().slice(0,10),
@@ -226,7 +204,10 @@
             <button class="btn copyBtn" data-id="${escapeHtml(c.id||'')}"><i data-lucide="copy"></i>Copy</button>
           </div>
         </div>
-        <div class="bg-muted p-2 rounded text-sm"><pre class="whitespace-pre-wrap">${escapeHtml(c.formattedContent||'')}</pre></div>
+
+        <!-- WhatsApp-style preview -->
+        <div class="wa-preview">${whatsappPreviewHTML(c.content||'')}</div>
+
         <div class="flex flex-wrap gap-1">
           ${(c.tags||[]).map(t=>`<span class='chip bg-secondary text-secondary-foreground'>#${escapeHtml(t)}</span>`).join('')}
         </div>
@@ -265,7 +246,7 @@
     try{
       const item = contents.find(x=>String(x.id)===String(id));
       if(!item) return alert('Item not found.');
-      await navigator.clipboard.writeText(item.formattedContent||'');
+      await navigator.clipboard.writeText(item.content||'');
       item.useCount = Number(item.useCount||0) + 1;
       item.lastUsed = new Date().toISOString().slice(0,10);
       render();
@@ -294,11 +275,7 @@
   cancelAdd.addEventListener('click', closeModalFn);
   saveAdd.addEventListener('click', createItem);
 
-  // 🔥 live WhatsApp-like preview
-  contentInput.addEventListener('input', () => {
-    waPreview.innerHTML = whatsappPreviewHTML(contentInput.value || '');
-  });
-
+  contentInput.addEventListener('input', ()=>{ waPreview.innerHTML = whatsappPreviewHTML(contentInput.value||''); });
   document.getElementById('searchInput').addEventListener('input', render);
   document.getElementById('categorySelect').addEventListener('change', render);
   syncBtn.addEventListener('click', syncContents);
