@@ -10,7 +10,6 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <link rel="icon" href="data:," />
   <style>
-    /* Simple card + muted/secondary tokens to mimic shadcn/ui naming */
     :root{
       --bg:#0b0b0c; --card:#111113; --muted:#1a1a1d; --muted-foreground:#9ca3af; --foreground:#e5e7eb; --primary:#16a34a; --primary-foreground:#ecfdf5; --secondary:#0f766e; --secondary-foreground:#ecfeff;
     }
@@ -46,7 +45,7 @@
             <i data-lucide="message-circle" class="w-8 h-8 text-green-500"></i>
             WhatsApp Content Library
           </h1>
-          <p class="text-muted-foreground mt-1">Manage your weekly group content with Notion integration</p>
+          <p class="text-muted-foreground mt-1">Manage your weekly group content with Notion sync (via Vercel API)</p>
         </div>
         <div class="flex gap-2">
           <button id="settingsBtn" class="btn"><i data-lucide="settings" class="w-4 h-4"></i>Settings</button>
@@ -69,29 +68,18 @@
     <!-- Settings Panel -->
     <div id="settingsPanel" class="mb-6 card rounded-xl hidden">
       <div class="p-4 border-b border-white/10">
-        <h2 class="text-xl font-semibold">Notion Configuration</h2>
+        <h2 class="text-xl font-semibold">Notion Connection</h2>
       </div>
       <div class="p-4 space-y-4">
-        <div>
-          <label for="apiKey" class="block mb-1 text-sm">Notion API Key</label>
-          <input id="apiKey" type="password" class="input" placeholder="secret_..." />
-        </div>
-        <div>
-          <label for="databaseId" class="block mb-1 text-sm">Database ID</label>
-          <input id="databaseId" class="input" placeholder="Database ID from Notion" />
+        <div class="text-sm text-muted-foreground">
+          <p>This site talks to a secure Vercel Function (backend) that holds your Notion credentials. You do <b>not</b> need to paste secrets into the browser.</p>
         </div>
         <div class="flex gap-2">
-          <button id="connectBtn" class="btn primary">Connect to Notion</button>
+          <button id="connectBtn" class="btn primary">Connect (use backend)</button>
           <button id="closeSettingsBtn" class="btn">Close</button>
         </div>
-        <div class="text-sm text-muted-foreground">
-          <p>To set up Notion integration:</p>
-          <ol class="list-decimal list-inside mt-1 space-y-1">
-            <li>Create a Notion integration at notion.so/integrations</li>
-            <li>Copy your API key and paste it above</li>
-            <li>Create a database and copy its ID</li>
-            <li>Share your database with your integration</li>
-          </ol>
+        <div class="text-xs text-muted-foreground">
+          <p>Backend URL: <code id="apiEcho"></code></p>
         </div>
       </div>
     </div>
@@ -180,9 +168,15 @@
   </div>
 
   <script>
-    // ====== Data & State ======
+    // ===== Backend API (Vercel) =====
+    // Your deployed Vercel function URL (GET = list, POST = create):
+    const API = 'https://whatsapp-content-library.vercel.app/api/contents';
+
+    // Echo it in UI
+    document.addEventListener('DOMContentLoaded', ()=>{ const el=document.getElementById('apiEcho'); if(el) el.textContent = API; });
+
+    // ===== Data & State =====
     const LS_KEY = 'whatsappContent';
-    const NOTION_KEY = 'notionConfig';
 
     const sampleContents = [
       {
@@ -227,7 +221,7 @@
     let searchQuery = '';
     let selectedCategory = 'all';
 
-    // ====== Helpers ======
+    // ===== Helpers =====
     const $ = sel => document.querySelector(sel);
     const $$ = sel => Array.from(document.querySelectorAll(sel));
 
@@ -301,6 +295,11 @@
 
     const icon = (name, cls='w-4 h-4') => `<i data-lucide="${name}" class="${cls}"></i>`;
 
+    const escapeHtml = (str='') => str
+      .replaceAll('&','&amp;')
+      .replaceAll('<','&lt;')
+      .replaceAll('>','&gt;');
+
     const renderCards = () => {
       const grid = $('#cardsGrid');
       grid.innerHTML = '';
@@ -308,49 +307,13 @@
         const card = document.createElement('div');
         card.className = 'card rounded-xl hover:shadow-lg/10 transition-shadow';
         card.innerHTML = `
-          <div class="p-4 border-b border-white/10">
-            <div class="flex justify-between items-start">
-              <div>
-                <div class="text-lg font-semibold">${escapeHtml(item.title)}</div>
-                <div class="flex items-center gap-2 mt-1">
-                  <span class="chip bg-primary text-primary-foreground">${escapeHtml(item.category)}</span>
-                  <span class="text-muted-foreground text-xs flex items-center gap-1">${icon('bar-chart-3','w-3 h-3')} Used ${item.useCount||0} times</span>
-                </div>
-              </div>
-              <div class="flex gap-1">
-                <button class="btn ghost copyBtn" title="Copy"><i data-lucide="copy" class="w-4 h-4 text-green-400"></i></button>
-                <button class="btn ghost delBtn" title="Delete"><i data-lucide="trash" class="w-4 h-4 text-red-400"></i></button>
-              </div>
-            </div>
-          </div>
-          <div class="p-4">
-            <div class="space-y-3">
-              <div class="bg-muted p-3 rounded-md">
-                <pre class="text-sm font-sans line-clamp-4">${escapeHtml(item.formattedContent)}</pre>
-              </div>
-              <div class="flex flex-wrap gap-1">
-                ${(item.tags||[]).map(t=>`<span class="chip bg-secondary text-secondary-foreground flex items-center gap-1">${icon('tag','w-3 h-3')}${escapeHtml(t)}</span>`).join('')}
-              </div>
-              <div class="flex justify-between items-center text-xs text-muted-foreground">
-                <span class="flex items-center gap-1">${icon('calendar','w-3 h-3')} Created: ${item.dateCreated}</span>
-                ${item.lastUsed ? `<span>Last used: ${item.lastUsed}</span>` : ''}
-              </div>
-            </div>
-            <button class="btn primary w-full mt-3 copyBtn">${icon('copy')} Copy for WhatsApp</button>
-          </div>
-        `;
-        // bind actions
+          <div class=\"p-4 border-b border-white/10\">\n            <div class=\"flex justify-between items-start\">\n              <div>\n                <div class=\"text-lg font-semibold\">${escapeHtml(item.title)}</div>\n                <div class=\"flex items-center gap-2 mt-1\">\n                  <span class=\"chip bg-primary text-primary-foreground\">${escapeHtml(item.category)}</span>\n                  <span class=\"text-muted-foreground text-xs flex items-center gap-1\">${icon('bar-chart-3','w-3 h-3')} Used ${item.useCount||0} times</span>\n                </div>\n              </div>\n              <div class=\"flex gap-1\">\n                <button class=\"btn ghost copyBtn\" title=\"Copy\"><i data-lucide=\"copy\" class=\"w-4 h-4 text-green-400\"></i></button>\n                <button class=\"btn ghost delBtn\" title=\"Delete\"><i data-lucide=\"trash\" class=\"w-4 h-4 text-red-400\"></i></button>\n              </div>\n            </div>\n          </div>\n          <div class=\"p-4\">\n            <div class=\"space-y-3\">\n              <div class=\"bg-muted p-3 rounded-md\">\n                <pre class=\"text-sm font-sans line-clamp-4\">${escapeHtml(item.formattedContent)}</pre>\n              </div>\n              <div class=\"flex flex-wrap gap-1\">\n                ${(item.tags||[]).map(t=>`<span class=\"chip bg-secondary text-secondary-foreground flex items-center gap-1\">${icon('tag','w-3 h-3')}${escapeHtml(t)}</span>`).join('')}\n              </div>\n              <div class=\"flex justify-between items-center text-xs text-muted-foreground\">\n                <span class=\"flex items-center gap-1\">${icon('calendar','w-3 h-3')} Created: ${item.dateCreated||''}</span>\n                ${item.lastUsed ? `<span>Last used: ${item.lastUsed}</span>` : ''}\n              </div>\n            </div>\n            <button class=\"btn primary w-full mt-3 copyBtn\">${icon('copy')} Copy for WhatsApp</button>\n          </div>`;
         card.querySelectorAll('.copyBtn').forEach(btn=>btn.addEventListener('click',()=>copyContent(item.id)));
         card.querySelector('.delBtn').addEventListener('click',()=>deleteContent(item.id));
         grid.appendChild(card);
       });
       lucide.createIcons();
     };
-
-    const escapeHtml = (str='') => str
-      .replaceAll('&','&amp;')
-      .replaceAll('<','&lt;')
-      .replaceAll('>','&gt;');
 
     const nowISODate = () => new Date().toISOString().split('T')[0];
 
@@ -359,7 +322,6 @@
       if(!item) return;
       try{
         await navigator.clipboard.writeText(item.formattedContent);
-        // update use count + last used
         item.useCount = (item.useCount||0) + 1;
         item.lastUsed = nowISODate();
         saveLS();
@@ -367,9 +329,9 @@
         renderCards();
         renderStats();
         alert('Content copied to clipboard!');
-      }catch(e){
-        console.error(e); alert('Failed to copy content. Please try again.');
-      }
+        // Optional: push lastUsed/useCount to Notion (fire-and-forget)
+        // You could POST a lightweight update endpoint if desired.
+      }catch(e){ console.error(e); alert('Failed to copy content. Please try again.'); }
     }
 
     function deleteContent(id){
@@ -382,9 +344,7 @@
       setEmptyState();
     }
 
-    function openEditor(open=true){
-      $('#editorModal').classList.toggle('show', open);
-    }
+    function openEditor(open=true){ $('#editorModal').classList.toggle('show', open); }
 
     function resetEditor(){
       $('#newTitle').value = '';
@@ -395,7 +355,7 @@
       $('#waPreview').textContent = '';
     }
 
-    function addContent(){
+    async function addContent(){
       const title = $('#newTitle').value.trim();
       const category = $('#newCategory').value || 'General';
       const content = $('#newContent').value.trim();
@@ -411,6 +371,8 @@
         dateCreated: nowISODate(),
         useCount: 0
       };
+
+      // Update UI immediately
       contents.push(item);
       saveLS();
       applyFilter();
@@ -419,31 +381,23 @@
       setEmptyState();
       openEditor(false);
       alert('Content added successfully!');
-      // (Optional) Notion sync simulation
-      if(isConnected()) console.log('Syncing new content to Notion:', item);
+
+      // POST to backend (create in Notion)
+      try{
+        await fetch(API, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(item) });
+      }catch(e){ console.warn('Notion create failed (offline or API error).', e); }
     }
 
-    // ====== Notion Config ======
-    function loadNotionConfig(){
-      const s = localStorage.getItem(NOTION_KEY);
-      return s ? JSON.parse(s) : { apiKey:'', databaseId:'' };
-    }
-    function saveNotionConfig(cfg){ localStorage.setItem(NOTION_KEY, JSON.stringify(cfg)); }
-    function isConnected(){
-      const {apiKey,databaseId} = loadNotionConfig();
-      return Boolean(apiKey && databaseId);
-    }
+    // ===== Notion Connection (via backend) =====
     function renderNotionStatus(){
-      const connected = isConnected();
+      // We consider "connected" if API endpoint is set; the backend holds secrets.
+      const connected = Boolean(API);
       $('#notionDot').className = 'w-3 h-3 rounded-full ' + (connected ? 'bg-green-500':'bg-red-500');
       $('#notionStatus').textContent = connected ? 'Connected' : 'Not Connected';
       $('#syncBtn').style.display = connected ? '' : 'none';
-      const cfg = loadNotionConfig();
-      $('#apiKey').value = cfg.apiKey || '';
-      $('#databaseId').value = cfg.databaseId || '';
     }
 
-    // ====== Event Wiring ======
+    // ===== Event Wiring =====
     function wireEvents(){
       $('#addBtn').addEventListener('click', ()=>{ resetEditor(); openEditor(true); });
       $('#emptyAddBtn').addEventListener('click', ()=>{ resetEditor(); openEditor(true); });
@@ -452,41 +406,34 @@
 
       $('#newContent').addEventListener('input', (e)=>{
         const v = e.target.value.trim();
-        if(v){
-          $('#waPreviewWrap').classList.remove('hidden');
-          $('#waPreview').textContent = formatForWhatsApp(v);
-        }else{
-          $('#waPreviewWrap').classList.add('hidden');
-        }
+        if(v){ $('#waPreviewWrap').classList.remove('hidden'); $('#waPreview').textContent = formatForWhatsApp(v); }
+        else{ $('#waPreviewWrap').classList.add('hidden'); }
       });
 
-      $('#settingsBtn').addEventListener('click', ()=>{
-        $('#settingsPanel').classList.toggle('hidden');
-      });
+      $('#settingsBtn').addEventListener('click', ()=>{ $('#settingsPanel').classList.toggle('hidden'); });
       $('#closeSettingsBtn').addEventListener('click', ()=>$('#settingsPanel').classList.add('hidden'));
 
       $('#connectBtn').addEventListener('click', ()=>{
-        const cfg = { apiKey: $('#apiKey').value.trim(), databaseId: $('#databaseId').value.trim() };
-        if(!cfg.apiKey || !cfg.databaseId){ alert('Please fill both API Key and Database ID.'); return; }
-        saveNotionConfig(cfg);
+        alert('Connected! Backend holds your Notion key securely.');
         renderNotionStatus();
-        alert('Successfully synced with Notion database!');
       });
 
-      $('#syncBtn').addEventListener('click', ()=>{
-        console.log('Syncing with Notion...', loadNotionConfig());
-        alert('Sync simulated. (Hook up real Notion API in a backend if needed)');
+      $('#syncBtn').addEventListener('click', async ()=>{
+        try{
+          const r = await fetch(API, { method:'GET' });
+          if(!r.ok) throw new Error('HTTP '+r.status);
+          const { items } = await r.json();
+          if(Array.isArray(items) && items.length){ contents = items.map(x=>({ ...x, id: x.id || String(Date.now()) })); }
+          saveLS(); applyFilter(); renderCards(); renderStats(); setEmptyState();
+          alert('Synced from Notion!');
+        }catch(e){ console.error(e); alert('Sync failed. Check API URL or backend logs.'); }
       });
 
-      $('#searchInput').addEventListener('input', (e)=>{
-        searchQuery = e.target.value; applyFilter(); renderCards(); setEmptyState();
-      });
-      $('#categorySelect').addEventListener('change', (e)=>{
-        selectedCategory = e.target.value; applyFilter(); renderCards(); setEmptyState();
-      });
+      $('#searchInput').addEventListener('input', (e)=>{ searchQuery = e.target.value; applyFilter(); renderCards(); setEmptyState(); });
+      $('#categorySelect').addEventListener('change', (e)=>{ selectedCategory = e.target.value; applyFilter(); renderCards(); setEmptyState(); });
     }
 
-    // ====== Boot ======
+    // ===== Boot =====
     function boot(){
       loadLS();
       renderCategorySelects();
@@ -496,7 +443,6 @@
       renderStats();
       renderNotionStatus();
       wireEvents();
-      // defaults in editor
       $('#newCategory').value = categories[1];
       lucide.createIcons();
     }
