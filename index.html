@@ -1,52 +1,113 @@
-<script>
-  async function createItem(){
-    const title = (titleInput.value||'').trim();
-    const category = categoryInput.value || 'General';
-    const content = (contentInput.value||'').trim();
-    const tags = (tagsInput.value||'').split(',').map(t=>t.trim()).filter(Boolean);
-
-    if(!title || !content){
-      alert('Please fill in both title and content.');
-      return;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WhatsApp Content Library</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="icon" href="data:," />
+  <style>
+    :root {
+      --bg: #0b0b0c;
+      --card: #111113;
+      --muted: #1a1a1d;
+      --muted-foreground: #9ca3af;
+      --foreground: #e5e7eb;
+      --primary: #16a34a;
+      --primary-foreground: #ffffff;
+      --secondary: #27272a;
+      --secondary-foreground: #e4e4e7;
     }
+    body { background: var(--bg); color: var(--foreground) }
+    .card { background: var(--card); border: 1px solid rgba(255,255,255,.06); border-radius: .75rem; padding: 1rem }
+    .bg-muted { background: var(--muted) }
+    .text-muted-foreground { color: var(--muted-foreground) }
+    .bg-primary { background: var(--primary) }
+    .text-primary-foreground { color: var(--primary-foreground) }
+    .bg-secondary { background: var(--secondary) }
+    .text-secondary-foreground { color: var(--secondary-foreground) }
+    .chip { border-radius: 9999px; padding: 2px 8px; font-size: 12px }
+    .btn { display: inline-flex; align-items: center; gap: .5rem; border: 1px solid rgba(255,255,255,.12); padding: .5rem .75rem; border-radius: .75rem; cursor: pointer }
+    .btn:hover { background: rgba(255,255,255,.06) }
+  </style>
+</head>
+<body class="min-h-screen p-6">
+  <div class="max-w-7xl mx-auto">
+    <h1 class="text-3xl font-bold flex items-center gap-2 mb-6">
+      <i data-lucide="message-circle" class="w-8 h-8 text-green-600"></i>
+      WhatsApp Content Library
+    </h1>
 
-    const body = {
-      title,
-      content,
-      formattedContent: formatForWhatsApp(content),
-      category,
-      tags,
-      dateCreated: new Date().toISOString().slice(0,10),
-      useCount: 0
-    };
+    <!-- Search and Filter -->
+    <div class="flex flex-col md:flex-row gap-4 mb-6">
+      <input id="searchInput" type="text" placeholder="Search content, titles, or tags..."
+        class="flex-1 p-2 rounded-md bg-muted border border-gray-700 pl-10" />
+      <select id="categoryFilter" class="p-2 rounded-md bg-muted border border-gray-700 w-48">
+        <option value="all">All Categories</option>
+      </select>
+      <button id="syncBtn" class="btn bg-green-600 hover:bg-green-700 text-white">Sync Now</button>
+      <button id="addContentBtn" class="btn bg-green-600 hover:bg-green-700 text-white">+ Add Content</button>
+    </div>
 
-    try {
-      const r = await fetch('https://whatsapp-content-library.vercel.app/api/contents', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
+    <!-- Content Grid -->
+    <div id="contentGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
 
-      if (!r.ok) {
-        let msg = 'HTTP ' + r.status;
-        try {
-          const j = await r.json();
-          if (j && (j.message || j.error)) msg = j.message || j.error;
-        } catch (_) {
-          const t = await r.text();
-          if (t) msg = t;
-        }
-        throw new Error(msg);
-      }
+    <!-- Stats -->
+    <div class="mt-8 card">
+      <h2 class="text-xl font-semibold mb-4">Content Statistics</h2>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+        <div>
+          <div id="statTotal" class="text-2xl font-bold text-primary">0</div>
+          <div class="text-sm text-muted-foreground">Total Content</div>
+        </div>
+        <div>
+          <div id="statUses" class="text-2xl font-bold text-primary">0</div>
+          <div class="text-sm text-muted-foreground">Total Uses</div>
+        </div>
+        <div>
+          <div id="statCategories" class="text-2xl font-bold text-primary">0</div>
+          <div class="text-sm text-muted-foreground">Categories</div>
+        </div>
+        <div>
+          <div id="statRecent" class="text-2xl font-bold text-primary">0</div>
+          <div class="text-sm text-muted-foreground">Recently Used</div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-      // success
-      closeModalFn();
-      titleInput.value=''; contentInput.value=''; tagsInput.value='';
-      await syncContents();
-      alert('Content added!');
-    } catch (err) {
-      console.error(err);
-      alert('Failed to add content: ' + err.message);
-    }
-  }
-</script>
+  <!-- Add Content Modal -->
+  <div id="modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div class="card w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold">Add New Content</h2>
+        <button onclick="closeModal()" class="text-gray-400 hover:text-white">✕</button>
+      </div>
+      <div class="space-y-4">
+        <input id="newTitle" type="text" placeholder="Content title..." class="w-full p-2 rounded-md bg-muted border border-gray-700" />
+        <select id="newCategory" class="w-full p-2 rounded-md bg-muted border border-gray-700">
+          <option value="Motivation">Motivation</option>
+          <option value="Tech Tips">Tech Tips</option>
+          <option value="Fun Facts">Fun Facts</option>
+          <option value="Announcements">Announcements</option>
+        </select>
+        <textarea id="newContent" rows="5" placeholder="Enter content (use *bold*, _italic_, ~strike~)..."
+          class="w-full p-2 rounded-md bg-muted border border-gray-700"></textarea>
+        <input id="newTags" type="text" placeholder="Tags (comma separated)" class="w-full p-2 rounded-md bg-muted border border-gray-700" />
+        <div>
+          <label class="block text-sm text-muted-foreground">WhatsApp Preview</label>
+          <div id="previewBox" class="bg-muted p-3 rounded-md whitespace-pre-wrap text-sm font-sans"></div>
+        </div>
+        <div class="flex justify-end gap-2">
+          <button onclick="closeModal()" class="btn">Cancel</button>
+          <button onclick="saveContent()" class="btn bg-green-600 hover:bg-green-700 text-white">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>lucide.createIcons();</script>
+</body>
+</html>
