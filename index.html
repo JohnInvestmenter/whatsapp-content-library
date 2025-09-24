@@ -261,6 +261,35 @@
     renderCategories();
     syncContents();
   });
+  // === Enhanced WhatsApp preview renderer (appended) ===
+  function whatsappPreviewHTML(raw=''){
+    const esc = (s='') => s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+    let s = esc(raw);
+    // Markdown-style first
+    s = s.replace(/\*\*(.*?)\*\*/gs,'<strong>$1</strong>');
+    s = s.replace(/__(.*?)__/gs,'<em>$1</em>');
+    s = s.replace(/~~(.*?)~~/gs,'<s>$1</s>');
+    // WhatsApp single markers
+    s = s.replace(/\*(.*?)\*/gs,'<strong>$1</strong>');
+    s = s.replace(/_(.*?)_/gs,'<em>$1</em>');
+    s = s.replace(/~(.*?)~/gs,'<s>$1</s>');
+    // inline code
+    s = s.replace(/`([^`]+)`/g,'<code style="background:rgba(255,255,255,.06); padding:2px 4px; border-radius:4px">$1<\/code>');
+    // line breaks
+    s = s.replace(/
+/g,'<br/>');
+    return s;
+  }
+
+  // Re-bind preview to render HTML (runs after original listeners)
+  (function(){
+    const input = document.getElementById('contentInput');
+    const preview = document.getElementById('waPreview');
+    if(input && preview){
+      input.removeEventListener && input.removeEventListener('input', ()=>{}); // no-op, in case
+      input.addEventListener('input', ()=>{ preview.innerHTML = whatsappPreviewHTML(input.value||''); });
+    }
+  })();
 </script>
 </body>
 </html>
