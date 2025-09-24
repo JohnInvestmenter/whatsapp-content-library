@@ -8,106 +8,259 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <link rel="icon" href="data:," />
   <style>
-    :root {
-      --bg: #0b0b0c;
-      --card: #111113;
-      --muted: #1a1a1d;
-      --muted-foreground: #9ca3af;
-      --foreground: #e5e7eb;
-      --primary: #16a34a;
-      --primary-foreground: #ffffff;
-      --secondary: #27272a;
-      --secondary-foreground: #e4e4e7;
+    :root{
+      --bg:#0b0b0c; --card:#111113; --muted:#1a1a1d; --muted-foreground:#9ca3af; --foreground:#e5e7eb; --primary:#16a34a; --primary-foreground:#ecfdf5; --secondary:#0f766e; --secondary-foreground:#ecfeff;
     }
-    body { background: var(--bg); color: var(--foreground) }
-    .card { background: var(--card); border: 1px solid rgba(255,255,255,.06); border-radius: .75rem; padding: 1rem }
-    .bg-muted { background: var(--muted) }
-    .text-muted-foreground { color: var(--muted-foreground) }
-    .bg-primary { background: var(--primary) }
-    .text-primary-foreground { color: var(--primary-foreground) }
-    .bg-secondary { background: var(--secondary) }
-    .text-secondary-foreground { color: var(--secondary-foreground) }
-    .chip { border-radius: 9999px; padding: 2px 8px; font-size: 12px }
-    .btn { display: inline-flex; align-items: center; gap: .5rem; border: 1px solid rgba(255,255,255,.12); padding: .5rem .75rem; border-radius: .75rem; cursor: pointer }
-    .btn:hover { background: rgba(255,255,255,.06) }
+    body{background:var(--bg); color:var(--foreground)}
+    .card{background:var(--card); border:1px solid rgba(255,255,255,0.06)}
+    .bg-muted{background:var(--muted)}
+    .text-muted-foreground{color:var(--muted-foreground)}
+    .bg-primary{background:var(--primary)}
+    .text-primary-foreground{color:var(--primary-foreground)}
+    .bg-secondary{background:var(--secondary)}
+    .text-secondary-foreground{color:var(--secondary-foreground)}
+    .chip{border-radius:9999px; padding:2px 8px; font-size:12px}
+    .btn{display:inline-flex; align-items:center; gap:.5rem; border:1px solid rgba(255,255,255,.12); padding:.5rem .75rem; border-radius:.75rem}
+    .btn:hover{background:rgba(255,255,255,.06)}
   </style>
 </head>
 <body class="min-h-screen p-6">
-  <div class="max-w-7xl mx-auto">
-    <h1 class="text-3xl font-bold flex items-center gap-2 mb-6">
-      <i data-lucide="message-circle" class="w-8 h-8 text-green-600"></i>
-      WhatsApp Content Library
-    </h1>
+  <div class="max-w-6xl mx-auto space-y-6">
+    <header class="flex justify-between items-center">
+      <h1 class="text-3xl font-bold flex items-center gap-2">
+        <i data-lucide="message-circle"></i> WhatsApp Content Library
+      </h1>
+      <div class="flex gap-2">
+        <button id="syncBtn" class="btn"><i data-lucide="refresh-cw"></i> Sync Now</button>
+        <button id="addBtn" class="btn bg-green-600 text-white"> <i data-lucide="plus"></i> Add Content</button>
+      </div>
+    </header>
 
-    <!-- Search and Filter -->
-    <div class="flex flex-col md:flex-row gap-4 mb-6">
-      <input id="searchInput" type="text" placeholder="Search content, titles, or tags..."
-        class="flex-1 p-2 rounded-md bg-muted border border-gray-700 pl-10" />
-      <select id="categoryFilter" class="p-2 rounded-md bg-muted border border-gray-700 w-48">
-        <option value="all">All Categories</option>
-      </select>
-      <button id="syncBtn" class="btn bg-green-600 hover:bg-green-700 text-white">Sync Now</button>
-      <button id="addContentBtn" class="btn bg-green-600 hover:bg-green-700 text-white">+ Add Content</button>
-    </div>
-
-    <!-- Content Grid -->
-    <div id="contentGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
-
-    <!-- Stats -->
-    <div class="mt-8 card">
-      <h2 class="text-xl font-semibold mb-4">Content Statistics</h2>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-        <div>
-          <div id="statTotal" class="text-2xl font-bold text-primary">0</div>
-          <div class="text-sm text-muted-foreground">Total Content</div>
+    <!-- Add Content Modal -->
+    <div id="addModal" class="fixed inset-0 bg-black/60 hidden items-center justify-center p-4 z-50">
+      <div class="card w-full max-w-xl p-4 rounded-xl">
+        <div class="flex justify-between items-center mb-3">
+          <h2 class="text-xl font-semibold">Add New Content</h2>
+          <button id="closeModal" class="btn"><i data-lucide="x"></i></button>
         </div>
-        <div>
-          <div id="statUses" class="text-2xl font-bold text-primary">0</div>
-          <div class="text-sm text-muted-foreground">Total Uses</div>
-        </div>
-        <div>
-          <div id="statCategories" class="text-2xl font-bold text-primary">0</div>
-          <div class="text-sm text-muted-foreground">Categories</div>
-        </div>
-        <div>
-          <div id="statRecent" class="text-2xl font-bold text-primary">0</div>
-          <div class="text-sm text-muted-foreground">Recently Used</div>
+        <div class="space-y-3">
+          <div>
+            <label class="block text-sm mb-1">Title</label>
+            <input id="titleInput" class="w-full p-2 rounded bg-muted" placeholder="Content title..." />
+          </div>
+          <div>
+            <label class="block text-sm mb-1">Category</label>
+            <select id="categoryInput" class="w-full p-2 rounded bg-muted"></select>
+          </div>
+          <div>
+            <label class="block text-sm mb-1">Content</label>
+            <textarea id="contentInput" class="w-full p-2 rounded bg-muted" rows="6" placeholder="Write your message... Use **bold**, __italic__, ~~strikethrough~~, and `code`."></textarea>
+          </div>
+          <div>
+            <label class="block text-sm mb-1">Tags (comma separated)</label>
+            <input id="tagsInput" class="w-full p-2 rounded bg-muted" placeholder="motivation, weekly, inspiration" />
+          </div>
+          <div>
+            <label class="block text-sm mb-1">WhatsApp Preview</label>
+            <div class="bg-muted p-2 rounded text-sm" id="waPreview">(start typing above)</div>
+          </div>
+          <div class="flex justify-end gap-2">
+            <button id="cancelAdd" class="btn">Cancel</button>
+            <button id="saveAdd" class="btn bg-green-600 text-white">Save</button>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- Add Content Modal -->
-  <div id="modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-    <div class="card w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-bold">Add New Content</h2>
-        <button onclick="closeModal()" class="text-gray-400 hover:text-white">✕</button>
-      </div>
-      <div class="space-y-4">
-        <input id="newTitle" type="text" placeholder="Content title..." class="w-full p-2 rounded-md bg-muted border border-gray-700" />
-        <select id="newCategory" class="w-full p-2 rounded-md bg-muted border border-gray-700">
-          <option value="Motivation">Motivation</option>
-          <option value="Tech Tips">Tech Tips</option>
-          <option value="Fun Facts">Fun Facts</option>
-          <option value="Announcements">Announcements</option>
+    <section>
+      <div class="flex gap-2 mb-4">
+        <input id="searchInput" placeholder="Search..." class="flex-1 p-2 rounded bg-muted" />
+        <select id="categorySelect" class="p-2 rounded bg-muted">
+          <option value="all">All Categories</option>
         </select>
-        <textarea id="newContent" rows="5" placeholder="Enter content (use *bold*, _italic_, ~strike~)..."
-          class="w-full p-2 rounded-md bg-muted border border-gray-700"></textarea>
-        <input id="newTags" type="text" placeholder="Tags (comma separated)" class="w-full p-2 rounded-md bg-muted border border-gray-700" />
-        <div>
-          <label class="block text-sm text-muted-foreground">WhatsApp Preview</label>
-          <div id="previewBox" class="bg-muted p-3 rounded-md whitespace-pre-wrap text-sm font-sans"></div>
-        </div>
-        <div class="flex justify-end gap-2">
-          <button onclick="closeModal()" class="btn">Cancel</button>
-          <button onclick="saveContent()" class="btn bg-green-600 hover:bg-green-700 text-white">Save</button>
-        </div>
       </div>
-    </div>
+      <div id="contentGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </section>
+
+    <section class="card p-4">
+      <h2 class="font-semibold mb-2">Content Statistics</h2>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+        <div><div id="statTotal" class="text-2xl font-bold">0</div><div class="text-muted-foreground">Total Content</div></div>
+        <div><div id="statUses" class="text-2xl font-bold">0</div><div class="text-muted-foreground">Total Uses</div></div>
+        <div><div id="statCategories" class="text-2xl font-bold">0</div><div class="text-muted-foreground">Categories</div></div>
+        <div><div id="statRecent" class="text-2xl font-bold">0</div><div class="text-muted-foreground">Recently Used</div></div>
+      </div>
+    </section>
   </div>
 
-  <script src="app.js"></script>
-  <script>lucide.createIcons();</script>
+<script>
+  // ===== Config =====
+  const API = 'https://whatsapp-content-library.vercel.app/api/contents';
+  const categories = ['Motivation','Tech Tips','Fun Facts','Announcements','Events','Educational'];
+
+  // ===== State =====
+  lucide.createIcons();
+  let contents = [];
+
+  // ===== Utils =====
+  const escapeHtml = (str='') => str.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+  const formatForWhatsApp = (text='') => text
+    .replace(/\*\*(.*?)\*\*/g,'*$1*')
+    .replace(/__(.*?)__/g,'_$1_')
+    .replace(/~~(.*?)~~/g,'~$1~')
+    .replace(/`(.*?)`/g,'$1');
+
+  // ===== API Calls =====
+  async function syncContents(){
+    try{
+      const res = await fetch(API);
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      const data = await res.json();
+      contents = Array.isArray(data.items) ? data.items : [];
+      renderCategories();
+      render();
+    }catch(e){ console.error('Sync failed', e); alert('Sync failed: '+e.message); }
+  }
+
+  async function createItem(){
+    const title = (titleInput.value||'').trim();
+    const category = categoryInput.value || 'General';
+    const content = (contentInput.value||'').trim();
+    const tags = (tagsInput.value||'').split(',').map(t=>t.trim()).filter(Boolean);
+    if(!title || !content){ alert('Please fill in both title and content.'); return; }
+
+    const body = {
+      title,
+      content,
+      formattedContent: formatForWhatsApp(content),
+      category,
+      tags,
+      dateCreated: new Date().toISOString().slice(0,10),
+      useCount: 0
+    };
+
+    try{
+      const r = await fetch(API, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(body)
+      });
+      if(!r.ok){
+        let msg='HTTP '+r.status;
+        try{ const j = await r.json(); if(j && (j.message||j.error)) msg = (j.message||j.error); }
+        catch(_){ const t = await r.text(); if(t) msg=t; }
+        throw new Error(msg);
+      }
+      closeModalFn();
+      titleInput.value=''; contentInput.value=''; tagsInput.value='';
+      await syncContents();
+      alert('Content added!');
+    }catch(err){ console.error(err); alert('Failed to add content: '+err.message); }
+  }
+
+  // ===== Rendering =====
+  function render(){
+    const grid = document.getElementById('contentGrid');
+    const search = (document.getElementById('searchInput').value||'').toLowerCase();
+    const cat = document.getElementById('categorySelect').value;
+    let filtered = contents.filter(c =>
+      (!search || (c.title||'').toLowerCase().includes(search) || (c.content||'').toLowerCase().includes(search) || (c.tags||[]).some(t => (t||'').toLowerCase().includes(search))) &&
+      (cat==='all' || c.category===cat)
+    );
+
+    grid.innerHTML = filtered.map(c => `
+      <div class="card p-4 space-y-3 rounded-xl">
+        <div class="flex justify-between items-start">
+          <div>
+            <h3 class="font-semibold">${escapeHtml(c.title||'')}</h3>
+            <div class="flex items-center gap-2 mt-1">
+              <span class="chip bg-primary text-primary-foreground">${escapeHtml(c.category||'')}</span>
+              <span class="text-xs text-muted-foreground">Used ${Number(c.useCount||0)} times</span>
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <button class="btn copyBtn" data-id="${escapeHtml(c.id||'')}"><i data-lucide="copy"></i>Copy</button>
+          </div>
+        </div>
+        <div class="bg-muted p-2 rounded text-sm"><pre class="whitespace-pre-wrap">${escapeHtml(c.formattedContent||'')}</pre></div>
+        <div class="flex flex-wrap gap-1">
+          ${(c.tags||[]).map(t=>`<span class='chip bg-secondary text-secondary-foreground'>#${escapeHtml(t)}</span>`).join('')}
+        </div>
+        <div class="text-xs text-muted-foreground flex justify-between">
+          <span>Created: ${escapeHtml(c.dateCreated||'')}</span>
+          ${c.lastUsed ? `<span>Last used: ${escapeHtml(c.lastUsed)}</span>` : '<span></span>'}
+        </div>
+      </div>`).join('');
+
+    document.querySelectorAll('.copyBtn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const id = btn.getAttribute('data-id');
+        copyToClipboard(id);
+      });
+    });
+
+    document.getElementById('statTotal').textContent = contents.length;
+    document.getElementById('statUses').textContent = contents.reduce((a,c)=>a+(c.useCount||0),0);
+    document.getElementById('statCategories').textContent = new Set(contents.map(c=>c.category)).size;
+    document.getElementById('statRecent').textContent = contents.filter(c=>c.lastUsed).length;
+
+    lucide.createIcons();
+  }
+
+  function renderCategories(){
+    const sel = document.getElementById('categorySelect');
+    const current = sel.value || 'all';
+    sel.innerHTML = '<option value="all">All Categories</option>' + categories.map(c=>`<option value="${c}">${c}</option>`).join('');
+    sel.value = current;
+
+    const modalSel = document.getElementById('categoryInput');
+    modalSel.innerHTML = categories.map(c=>`<option value="${c}">${c}</option>`).join('');
+  }
+
+  async function copyToClipboard(id){
+    try{
+      const item = contents.find(x=>String(x.id)===String(id));
+      if(!item) return alert('Item not found.');
+      await navigator.clipboard.writeText(item.formattedContent||'');
+      item.useCount = Number(item.useCount||0) + 1;
+      item.lastUsed = new Date().toISOString().slice(0,10);
+      render();
+      alert('Copied to clipboard!');
+      // (Optional) You could POST an update endpoint to persist useCount/lastUsed back to Notion
+    }catch(e){ console.error(e); alert('Copy failed.'); }
+  }
+
+  // ===== Modal & Events =====
+  const addBtn = document.getElementById('addBtn');
+  const syncBtn = document.getElementById('syncBtn');
+  const addModal = document.getElementById('addModal');
+  const closeModal = document.getElementById('closeModal');
+  const cancelAdd = document.getElementById('cancelAdd');
+  const saveAdd = document.getElementById('saveAdd');
+  const titleInput = document.getElementById('titleInput');
+  const categoryInput = document.getElementById('categoryInput');
+  const contentInput = document.getElementById('contentInput');
+  const tagsInput = document.getElementById('tagsInput');
+  const waPreview = document.getElementById('waPreview');
+
+  function openModal(){ addModal.classList.remove('hidden'); addModal.classList.add('flex'); titleInput.focus(); }
+  function closeModalFn(){ addModal.classList.add('hidden'); addModal.classList.remove('flex'); }
+
+  addBtn.addEventListener('click', openModal);
+  closeModal.addEventListener('click', closeModalFn);
+  cancelAdd.addEventListener('click', closeModalFn);
+  saveAdd.addEventListener('click', createItem);
+
+  contentInput.addEventListener('input', ()=>{ waPreview.textContent = formatForWhatsApp(contentInput.value||''); });
+  document.getElementById('searchInput').addEventListener('input', render);
+  document.getElementById('categorySelect').addEventListener('change', render);
+  syncBtn.addEventListener('click', syncContents);
+
+  // Boot
+  window.addEventListener('DOMContentLoaded', () => {
+    renderCategories();
+    syncContents();
+  });
+</script>
 </body>
 </html>
