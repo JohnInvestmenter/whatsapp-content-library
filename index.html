@@ -5,146 +5,60 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>WhatsApp Content Library</title>
 
-  <!-- Tailwind (CDN) -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-
-  <!-- Corporate Fonts -->
-  <!-- Headline/Subline: Montserrat; Serif Italic accent: Playfair Display; Signature accent: Great Vibes -->
-  <!-- If you have a Minion Pro license: replace Playfair with your Minion Pro webfont and swap the font-family in CSS -->
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@1,400;1,500;1,700&family=Great+Vibes&display=swap" rel="stylesheet">
-
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@1,400;1,500;1,700&display=swap" rel="stylesheet">
   <link rel="icon" href="data:," />
+
   <style>
     :root{
-      /* Corporate Palette */
-      --brand-gold: #D6B160;
-      --brand-black: #000000;
-      --brand-white: #FFFFFF;
-
-      /* UI Surface Scale */
-      --bg:#0A0A0A;             /* deep black */
-      --card:#111113;           /* near-black card */
-      --muted:#151518;          /* soft dark for inputs/bubbles */
-      --muted-foreground:#B8BDC7; /* cool grey text for meta */
-      --foreground:#FFFFFF;     /* primary text */
-
-      /* Component Accents (aligned to brand) */
-      --primary: var(--brand-gold);
-      --primary-contrast: #1a1300; /* readable gold-on-black contrast on hover focus rings */
-      --chip-bg:#1C1A14;       /* gold-tinted chip bg */
-      --chip-text:#F8E9C4;     /* light gold text */
-      --border: rgba(255,255,255,.08);
-      --border-strong: rgba(255,255,255,.12);
-      --shadow: 0 8px 24px rgba(0,0,0,.35);
+      --brand-gold: #D6B160; --brand-black: #000; --brand-white: #fff;
+      --bg:#fff; --card:#F8F8F8; --muted:#F0F0F0; --muted-foreground:#666; --foreground:#000;
+      --primary:#D6B160; --primary-contrast:#000;
+      --chip-bg:#FDF6EC; --chip-text:#7A5E24;
+      --border: rgba(0,0,0,.08); --border-strong: rgba(0,0,0,.15);
+      --shadow: 0 4px 14px rgba(0,0,0,.08);
     }
-
-    /* Typography */
-    html, body { font-family: "Montserrat", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
-    .h1 { font-weight: 800; letter-spacing: .02em; }
-    .accent-italic { font-family: "Playfair Display", Georgia, "Times New Roman", serif; font-style: italic; }
-    .signature { font-family: "Great Vibes", cursive; }
-
-    /* Base Surfaces */
+    html, body { font-family: "Montserrat", system-ui, sans-serif; }
     body{ background:var(--bg); color:var(--foreground); }
-    .card{
-      background:var(--card);
-      border:1px solid var(--border);
-      border-radius: 18px;
-      box-shadow: var(--shadow);
-    }
-
-    /* Buttons */
-    .btn{
-      display:inline-flex; align-items:center; gap:.5rem;
-      border:1px solid var(--border-strong);
-      padding:.55rem .85rem; border-radius:.9rem; transition:.15s ease;
-      background:transparent; color:var(--foreground);
-    }
-    .btn:hover{ background:rgba(255,255,255,.06) }
-    .btn-primary{
-      background: var(--primary); color: var(--brand-black);
-      border-color: color-mix(in oklab, var(--primary), #000 20%);
-      font-weight: 600;
-    }
-    .btn-primary:hover{ filter: brightness(1.05); }
-    .btn-outline{
-      border-color: var(--primary); color: var(--primary);
-    }
-    .btn-outline:hover{ background: rgba(214,177,96,.08); }
-
-    /* Chips */
-    .chip{
-      display:inline-flex; align-items:center; gap:.35rem;
-      background: var(--chip-bg); color: var(--chip-text);
-      border:1px solid color-mix(in oklab, var(--primary), #000 70%);
-      border-radius: 9999px; padding: 2px 10px; font-size: 12px;
-    }
-
-    /* Inputs */
-    .input, .select, .textarea {
-      width:100%; border-radius: 10px; border:1px solid var(--border-strong);
-      background: var(--muted); color: var(--foreground);
-      padding: .6rem .75rem; outline: none;
-    }
-    .input:focus, .select:focus, .textarea:focus{
-      box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary), #000 70%);
-      border-color: var(--primary);
-    }
-    label { color: var(--muted-foreground); font-size: .9rem; }
-
-    /* WhatsApp-like preview bubble */
-    .wa-preview{
-      background: #12130F;
-      border: 1px solid color-mix(in oklab, var(--primary), #000 75%);
-      border-radius: 16px;
-      padding: 12px 14px;
-      font-size: .96rem;
-      line-height: 1.55;
-      white-space: pre-wrap;
-    }
-    .wa-preview b{font-weight:700}
-    .wa-preview i{font-style:italic}
-    .wa-preview s{text-decoration:line-through;opacity:.9}
-    .wa-preview code{
-      font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
-      background: rgba(255,255,255,.06);
-      padding: 0 4px; border-radius: 4px;
-    }
-
-    /* Gold dividers */
-    .divider { height:1px; background: color-mix(in oklab, var(--primary), #000 75%); }
-
-    /* Fixed-height card layout (scrollable preview in the middle) */
-    .fixed-card { height: 420px; display:flex; flex-direction:column; }
-    .card-preview { flex:1; min-height:120px; overflow-y:auto; }
+    .card{ background:var(--card); border:1px solid var(--border); border-radius:18px; box-shadow:var(--shadow); }
+    .btn{ display:inline-flex; align-items:center; gap:.5rem; border:1px solid var(--border-strong); padding:.55rem .85rem; border-radius:.9rem; transition:.15s; }
+    .btn:hover{ background:rgba(0,0,0,.05) }
+    .btn-primary{ background:var(--primary); color:var(--primary-contrast); border-color:rgba(0,0,0,.2); font-weight:600; }
+    .btn-primary:hover{ filter:brightness(.95); }
+    .btn-outline{ border-color:var(--primary); color:var(--primary); }
+    .btn-outline:hover{ background:rgba(214,177,96,.12); }
+    .chip{ display:inline-flex; align-items:center; background:var(--chip-bg); color:var(--chip-text); border-radius:9999px; padding:2px 10px; font-size:12px; }
+    .input,.select,.textarea{ width:100%; border-radius:10px; border:1px solid var(--border-strong); background:var(--muted); color:var(--foreground); padding:.6rem .75rem; outline:none; }
+    .input:focus,.select:focus,.textarea:focus{ box-shadow:0 0 0 3px rgba(214,177,96,.35); border-color:var(--primary); }
+    label{ color:var(--muted-foreground); font-size:.9rem; }
+    .wa-preview{ background:#FDFCF9; border:1px solid rgba(214,177,96,.4); border-radius:12px; padding:12px 14px; font-size:.96rem; line-height:1.55; white-space:pre-wrap; }
+    .wa-preview b{ font-weight:700 } .wa-preview i{ font-style:italic } .wa-preview s{ text-decoration:line-through; opacity:.9 }
+    .wa-preview code{ font-family:monospace; background:#efefef; padding:0 4px; border-radius:4px; }
+    .divider{ height:1px; background: var(--border); }
+    .fixed-card{ height:420px; display:flex; flex-direction:column; }
+    .card-preview{ flex:1; min-height:120px; overflow-y:auto; }
+    .thumb{ width:64px; height:64px; border-radius:10px; object-fit:cover; border:1px solid var(--border-strong); background:#fff; }
   </style>
 </head>
 <body class="min-h-screen p-6">
   <div class="max-w-6xl mx-auto space-y-6">
     <header class="flex justify-between items-center">
-      <h1 class="h1 text-3xl flex items-center gap-3">
-        <i data-lucide="message-circle"></i>
-        WhatsApp Content Library
-      </h1>
+      <h1 class="text-3xl font-extrabold flex items-center gap-3"><i data-lucide="message-circle"></i> WhatsApp Content Library</h1>
       <div class="flex gap-2">
         <button id="syncBtn" class="btn btn-outline"><i data-lucide="refresh-cw"></i> Sync Now</button>
         <button id="addBtn" class="btn btn-primary"><i data-lucide="plus"></i> Add Content</button>
       </div>
     </header>
 
-    <!-- Add Content Modal (sticky header/footer, scrollable body) -->
+    <!-- Add Content Modal -->
     <div id="addModal" class="fixed inset-0 bg-black/60 hidden p-4 z-50">
       <div class="card w-full max-w-xl mx-auto rounded-xl max-h-[90vh] overflow-hidden flex flex-col">
-        <!-- Header -->
         <div class="flex justify-between items-center p-4 sticky top-0 bg-[var(--card)] z-10">
-          <h2 class="text-xl font-semibold">Add New Content <span class="accent-italic text-[0.95rem] opacity-80">– fast & on-brand</span></h2>
+          <h2 class="text-xl font-semibold">Add New Content</h2>
           <button id="closeModal" class="btn"><i data-lucide="x"></i></button>
         </div>
         <div class="divider"></div>
-
-        <!-- Body (scrolls) -->
         <div class="p-4 space-y-4 overflow-y-auto flex-1">
           <div>
             <label class="block mb-1">Title</label>
@@ -162,14 +76,24 @@
             <label class="block mb-1">Tags (comma separated)</label>
             <input id="tagsInput" class="input" placeholder="motivation, weekly, inspiration" />
           </div>
+
+          <!-- Attachments -->
+          <div>
+            <label class="block mb-1">Attachments (image / video / pdf / doc)</label>
+            <div class="flex items-center gap-2">
+              <input id="fileInput" type="file" multiple class="hidden" />
+              <button id="pickFiles" class="btn"><i data-lucide="paperclip"></i> Choose files</button>
+              <span class="text-sm text-gray-500">Uploaded to Drive; links saved with the content.</span>
+            </div>
+            <div id="attachmentsList" class="mt-3 flex flex-wrap gap-3"></div>
+          </div>
+
           <div>
             <label class="block mb-1">WhatsApp Preview</label>
             <div id="waPreview" class="wa-preview max-h-56 overflow-y-auto">(start typing above)</div>
           </div>
         </div>
         <div class="divider"></div>
-
-        <!-- Footer -->
         <div class="p-4 flex justify-end gap-2 sticky bottom-0 bg-[var(--card)] z-10">
           <button id="clearAdd" class="btn">Clear</button>
           <button id="cancelAdd" class="btn">Cancel</button>
@@ -181,9 +105,7 @@
     <section>
       <div class="flex gap-2 mb-4">
         <input id="searchInput" placeholder="Search..." class="input flex-1" />
-        <select id="categorySelect" class="select w-[220px]">
-          <option value="all">All Categories</option>
-        </select>
+        <select id="categorySelect" class="select w-[220px]"><option value="all">All Categories</option></select>
       </div>
       <div id="contentGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
     </section>
@@ -191,227 +113,293 @@
     <section class="card p-5">
       <h2 class="font-semibold text-lg mb-2">Content Statistics</h2>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-        <div>
-          <div id="statTotal" class="text-2xl font-extrabold" style="color:var(--primary)">0</div>
-          <div class="text-sm" style="color:var(--muted-foreground)">Total Content</div>
-        </div>
-        <div>
-          <div id="statUses" class="text-2xl font-extrabold" style="color:var(--primary)">0</div>
-          <div class="text-sm" style="color:var(--muted-foreground)">Total Uses</div>
-        </div>
-        <div>
-          <div id="statCategories" class="text-2xl font-extrabold" style="color:var(--primary)">0</div>
-          <div class="text-sm" style="color:var(--muted-foreground)">Categories</div>
-        </div>
-        <div>
-          <div id="statRecent" class="text-2xl font-extrabold" style="color:var(--primary)">0</div>
-          <div class="text-sm" style="color:var(--muted-foreground)">Recently Used</div>
-        </div>
+        <div><div id="statTotal" class="text-2xl font-extrabold text-[var(--primary)]">0</div><div class="text-sm text-gray-500">Total Content</div></div>
+        <div><div id="statUses" class="text-2xl font-extrabold text-[var(--primary)]">0</div><div class="text-sm text-gray-500">Total Uses</div></div>
+        <div><div id="statCategories" class="text-2xl font-extrabold text-[var(--primary)]">0</div><div class="text-sm text-gray-500">Categories</div></div>
+        <div><div id="statRecent" class="text-2xl font-extrabold text-[var(--primary)]">0</div><div class="text-sm text-gray-500">Recently Used</div></div>
       </div>
     </section>
   </div>
 
-  <script>
-    // ===== Config =====
-    const API = 'https://whatsapp-content-library.vercel.app/api/contents';
-    const categories = ['Motivation','Tech Tips','Fun Facts','Announcements','Events','Educational'];
+<script>
+  // === CONFIG ===
+  const API = 'https://whatsapp-content-library.vercel.app/api/contents';
+  const DRIVE_UPLOAD_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwWgZ3B3vcN4flFQo1-Ul-AVjVGZozfoe8RDcbr8ez2d_d7r9XvQ7tnePY5q8ZC4w7Ziw/exec';
+  const categories = ['Motivation','Tech Tips','Fun Facts','Announcements','Events','Educational'];
 
-    // ===== State =====
-    lucide.createIcons();
-    let contents = [];
+  lucide.createIcons();
 
-    // ===== Utils =====
-    const escapeHtml = (str='') => str.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
-    // Visual WhatsApp-style render
-    const whatsappPreviewHTML = (raw='') => {
-      let s = escapeHtml(raw);
-      // Markdown markers
-      s = s.replace(/\*\*(.*?)\*\*/gs,'<b>$1</b>');
-      s = s.replace(/__(.*?)__/gs,'<i>$1</i>');
-      s = s.replace(/~~(.*?)~~/gs,'<s>$1</s>');
-      // WhatsApp markers
-      s = s.replace(/\*(.*?)\*/gs,'<b>$1</b>');
-      s = s.replace(/_(.*?)_/gs,'<i>$1</i>');
-      s = s.replace(/~(.*?)~/gs,'<s>$1</s>');
-      // Inline code
-      s = s.replace(/`([^`]+)`/g,'<code>$1</code>');
-      // Line breaks
-      return s.replace(/\n/g,'<br/>');
+  let contents = [];
+  let newAttachments = []; // { name, url, mimeType }
+
+  // === Utils ===
+  const escapeHtml = (s='') => s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+  const whatsappPreviewHTML = (raw='') => {
+    let s = escapeHtml(raw);
+    s = s.replace(/\*\*(.*?)\*\*/gs,'<b>$1</b>')
+         .replace(/__(.*?)__/gs,'<i>$1</i>')
+         .replace(/~~(.*?)~~/gs,'<s>$1</s>')
+         .replace(/\*(.*?)\*/gs,'<b>$1</b>')
+         .replace(/_(.*?)_/gs,'<i>$1</i>')
+         .replace(/~(.*?)~/gs,'<s>$1</s>')
+         .replace(/`([^`]+)`/g,'<code>$1</code>');
+    return s.replace(/\n/g,'<br/>');
+  };
+
+  // Extract Drive file ID from typical URLs
+  function driveIdFromUrl(url='') {
+    // formats: https://drive.google.com/file/d/FILE_ID/view ... OR ... uc?id=FILE_ID
+    const m1 = url.match(/\/file\/d\/([^/]+)\//);
+    if (m1) return m1[1];
+    const m2 = url.match(/[?&]id=([^&]+)/);
+    if (m2) return m2[1];
+    return '';
+  }
+  // An image-friendly preview URL for <img> tag
+  function drivePreviewSrc(url='') {
+    const id = driveIdFromUrl(url);
+    return id ? `https://drive.google.com/uc?id=${id}&export=view` : url;
+  }
+
+  // === API Calls ===
+  async function syncContents(){
+    try{
+      const r = await fetch(API);
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      const data = await r.json();
+      contents = Array.isArray(data.items) ? data.items : [];
+      renderCategories(); render();
+    }catch(e){ console.error('Sync failed', e); alert('Sync failed: '+e.message); }
+  }
+
+  async function createItem(){
+    const title = (titleInput.value||'').trim();
+    const category = categoryInput.value || 'General';
+    const content = (contentInput.value||'').trim();
+    const tags = (tagsInput.value||'').split(',').map(t=>t.trim()).filter(Boolean);
+    if(!title || !content){ alert('Please fill in both title and content.'); return; }
+
+    const body = {
+      title, category, content, formattedContent: content, tags,
+      dateCreated: new Date().toISOString().slice(0,10),
+      useCount: 0,
+      attachments: newAttachments, // [{ name, url, mimeType }]
     };
 
-    // ===== API Calls =====
-    async function syncContents(){
-      try{
-        const res = await fetch(API);
-        if(!res.ok) throw new Error('HTTP '+res.status);
-        const data = await res.json();
-        contents = Array.isArray(data.items) ? data.items : [];
-        renderCategories();
-        render();
-      }catch(e){ console.error('Sync failed', e); alert('Sync failed: '+e.message); }
-    }
+    try{
+      const r = await fetch(API, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+      if(!r.ok){ const t=await r.text(); throw new Error(t || ('HTTP '+r.status)); }
+      clearForm(); closeModalFn(); await syncContents(); alert('Content added!');
+    }catch(err){ console.error(err); alert('Failed to add content: '+err.message); }
+  }
 
-    async function createItem(){
-      const title = (titleInput.value||'').trim();
-      const category = categoryInput.value || 'General';
-      const content = (contentInput.value||'').trim();
-      const tags = (tagsInput.value||'').split(',').map(t=>t.trim()).filter(Boolean);
-      if(!title || !content){ alert('Please fill in both title and content.'); return; }
+  // === Rendering ===
+  function render(){
+    const grid = document.getElementById('contentGrid');
+    const search = (document.getElementById('searchInput').value||'').toLowerCase();
+    const cat = document.getElementById('categorySelect').value;
 
-      const body = {
-        title,
-        content,
-        formattedContent: content,   // save same text (WhatsApp markers)
-        category,
-        tags,
-        dateCreated: new Date().toISOString().slice(0,10),
-        useCount: 0
-      };
+    const filtered = contents.filter(c =>
+      (!search || (c.title||'').toLowerCase().includes(search) || (c.content||'').toLowerCase().includes(search) || (c.tags||[]).some(t => (t||'').toLowerCase().includes(search))) &&
+      (cat==='all' || c.category===cat)
+    );
 
-      try{
-        const r = await fetch(API, {
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body: JSON.stringify(body)
-        });
-        if(!r.ok){
-          let msg='HTTP '+r.status;
-          try{ const j = await r.json(); if(j && (j.message||j.error)) msg = (j.message||j.error); }
-          catch(_){ const t = await r.text(); if(t) msg=t; }
-          throw new Error(msg);
-        }
-        closeModalFn();
-        clearForm();
-        await syncContents();
-        alert('Content added!');
-      }catch(err){ console.error(err); alert('Failed to add content: '+err.message); }
-    }
-
-    // ===== Rendering =====
-    function render(){
-      const grid = document.getElementById('contentGrid');
-      const search = (document.getElementById('searchInput').value||'').toLowerCase();
-      const cat = document.getElementById('categorySelect').value;
-      let filtered = contents.filter(c =>
-        (!search || (c.title||'').toLowerCase().includes(search) || (c.content||'').toLowerCase().includes(search) || (c.tags||[]).some(t => (t||'').toLowerCase().includes(search))) &&
-        (cat==='all' || c.category===cat)
-      );
-
-      grid.innerHTML = filtered.map(c => `
-        <div class="card p-4 fixed-card">
-          <!-- Header -->
-          <div>
-            <div class="flex justify-between items-start">
-              <div>
-                <h3 class="font-semibold text-[1.05rem]">${escapeHtml(c.title||'')}</h3>
-                <div class="flex items-center gap-2 mt-1">
-                  <span class="chip"><span style="width:.4rem;height:.4rem;background:var(--primary);border-radius:9999px;display:inline-block"></span>${escapeHtml(c.category||'')}</span>
-                  <span class="text-xs" style="color:var(--muted-foreground)">Used ${Number(c.useCount||0)} times</span>
-                </div>
-              </div>
-              <div class="flex gap-2">
-                <button class="btn btn-outline copyBtn" data-id="${escapeHtml(c.id||'')}"><i data-lucide="copy"></i>Copy</button>
+    grid.innerHTML = filtered.map(c => `
+      <div class="card p-4 fixed-card">
+        <div>
+          <div class="flex justify-between items-start">
+            <div>
+              <h3 class="font-semibold text-[1.05rem]">${escapeHtml(c.title||'')}</h3>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="chip"><span style="width:.4rem;height:.4rem;background:var(--primary);border-radius:9999px;display:inline-block"></span>${escapeHtml(c.category||'')}</span>
+                <span class="text-xs text-gray-500">Used ${Number(c.useCount||0)} times</span>
               </div>
             </div>
-          </div>
-
-          <!-- Preview -->
-          <div class="mt-3 card-preview">
-            <div class="wa-preview">${whatsappPreviewHTML(c.content||'')}</div>
-          </div>
-
-          <!-- Footer/meta -->
-          <div class="mt-3">
-            <div class="flex flex-wrap gap-1 mb-2">
-              ${(c.tags||[]).map(t=>`<span class='chip'>#${escapeHtml(t)}</span>`).join('')}
-            </div>
-            <div class="text-xs flex justify-between" style="color:var(--muted-foreground)">
-              <span>Created: ${escapeHtml(c.dateCreated||'')}</span>
-              ${c.lastUsed ? `<span>Last used: ${escapeHtml(c.lastUsed)}</span>` : '<span></span>'}
-            </div>
+            <button class="btn btn-outline copyBtn" data-id="${escapeHtml(c.id||'')}"><i data-lucide="copy"></i>Copy</button>
           </div>
         </div>
-      `).join('');
 
-      document.querySelectorAll('.copyBtn').forEach(btn=>{
-        btn.addEventListener('click', ()=>{
-          const id = btn.getAttribute('data-id');
-          copyToClipboard(id);
-        });
-      });
+        <div class="mt-3 card-preview">
+          ${(c.attachments && c.attachments.length) ? `
+            <div class="mb-3 flex flex-wrap gap-2">
+              ${c.attachments.map(a => renderAttachmentChip(a)).join('')}
+            </div>` : ``}
+          <div class="wa-preview">${whatsappPreviewHTML(c.content||'')}</div>
+        </div>
 
-      document.getElementById('statTotal').textContent = contents.length;
-      document.getElementById('statUses').textContent = contents.reduce((a,c)=>a+(c.useCount||0),0);
-      document.getElementById('statCategories').textContent = new Set(contents.map(c=>c.category)).size;
-      document.getElementById('statRecent').textContent = contents.filter(c=>c.lastUsed).length;
+        <div class="mt-3">
+          <div class="flex flex-wrap gap-1 mb-2">
+            ${(c.tags||[]).map(t=>`<span class='chip'>#${escapeHtml(t)}</span>`).join('')}
+          </div>
+          <div class="text-xs flex justify-between text-gray-500">
+            <span>Created: ${escapeHtml(c.dateCreated||'')}</span>
+            ${c.lastUsed ? `<span>Last used: ${escapeHtml(c.lastUsed)}</span>` : '<span></span>'}
+          </div>
+        </div>
+      </div>
+    `).join('');
 
-      lucide.createIcons();
-    }
-
-    function renderCategories(){
-      const sel = document.getElementById('categorySelect');
-      const current = sel.value || 'all';
-      sel.innerHTML = '<option value="all">All Categories</option>' + categories.map(c=>`<option value="${c}">${c}</option>`).join('');
-      sel.value = current;
-
-      const modalSel = document.getElementById('categoryInput');
-      modalSel.innerHTML = categories.map(c=>`<option value="${c}">${c}</option>`).join('');
-    }
-
-    async function copyToClipboard(id){
-      try{
+    document.querySelectorAll('.copyBtn').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        const id = btn.getAttribute('data-id');
         const item = contents.find(x=>String(x.id)===String(id));
-        if(!item) return alert('Item not found.');
+        if(!item) return;
         await navigator.clipboard.writeText(item.content||'');
-        item.useCount = Number(item.useCount||0) + 1;
+        item.useCount = Number(item.useCount||0)+1;
         item.lastUsed = new Date().toISOString().slice(0,10);
         render();
-        alert('Copied to clipboard!');
-      }catch(e){ console.error(e); alert('Copy failed.'); }
-    }
-
-    // ===== Modal & Events =====
-    const addBtn = document.getElementById('addBtn');
-    const syncBtn = document.getElementById('syncBtn');
-    const addModal = document.getElementById('addModal');
-    const closeModal = document.getElementById('closeModal');
-    const cancelAdd = document.getElementById('cancelAdd');
-    const saveAdd = document.getElementById('saveAdd');
-    const clearBtn = document.getElementById('clearAdd');
-    const titleInput = document.getElementById('titleInput');
-    const categoryInput = document.getElementById('categoryInput');
-    const contentInput = document.getElementById('contentInput');
-    const tagsInput = document.getElementById('tagsInput');
-    const waPreview = document.getElementById('waPreview');
-
-    function openModal(){ addModal.classList.remove('hidden'); titleInput.focus(); }
-    function closeModalFn(){ addModal.classList.add('hidden'); }
-
-    function clearForm(){
-      titleInput.value = '';
-      categoryInput.value = '';
-      contentInput.value = '';
-      tagsInput.value = '';
-      waPreview.innerHTML = '(start typing above)';
-      titleInput.focus();
-    }
-
-    addBtn.addEventListener('click', openModal);
-    closeModal.addEventListener('click', closeModalFn);
-    cancelAdd.addEventListener('click', closeModalFn);
-    clearBtn.addEventListener('click', clearForm);
-    saveAdd.addEventListener('click', createItem);
-
-    contentInput.addEventListener('input', ()=>{ waPreview.innerHTML = whatsappPreviewHTML(contentInput.value||''); });
-    document.getElementById('searchInput').addEventListener('input', render);
-    document.getElementById('categorySelect').addEventListener('change', render);
-    syncBtn.addEventListener('click', syncContents);
-
-    // Boot
-    window.addEventListener('DOMContentLoaded', () => {
-      renderCategories();
-      syncContents();
+        alert('Copied!');
+      });
     });
-  </script>
+
+    lucide.createIcons();
+    document.getElementById('statTotal').textContent = contents.length;
+    document.getElementById('statUses').textContent = contents.reduce((a,c)=>a+(c.useCount||0),0);
+    document.getElementById('statCategories').textContent = new Set(contents.map(c=>c.category)).size;
+    document.getElementById('statRecent').textContent = contents.filter(c=>c.lastUsed).length;
+  }
+
+  function renderAttachmentChip(a){
+    const url = a.url || '';
+    const name = escapeHtml(a.name || 'file');
+    const isImage = /\.(png|jpg|jpeg|gif|webp|bmp|svg)$/i.test(name) || /image\//i.test(a.mimeType || '');
+
+    if (isImage) {
+      const imgSrc = drivePreviewSrc(url);
+      return `<a class="inline-flex items-center gap-2 border border-[var(--border-strong)] rounded-md px-2 py-1" href="${url}" target="_blank" rel="noopener">
+        <img class="thumb" src="${imgSrc}" alt="${name}" />
+        <span class="text-sm">${name}</span>
+      </a>`;
+    }
+    // non-image
+    return `<a class="inline-flex items-center gap-2 border border-[var(--border-strong)] rounded-md px-2 py-1" href="${url}" target="_blank" rel="noopener">
+      <i data-lucide="file"></i><span class="text-sm">${name}</span>
+    </a>`;
+  }
+
+  function renderCategories(){
+    const sel = document.getElementById('categorySelect');
+    const current = sel.value || 'all';
+    sel.innerHTML = '<option value="all">All Categories</option>' + categories.map(c=>`<option value="${c}">${c}</option>`).join('');
+    sel.value = current;
+    const modalSel = document.getElementById('categoryInput');
+    modalSel.innerHTML = categories.map(c=>`<option value="${c}">${c}</option>`).join('');
+  }
+
+  // === Uploads to Drive via Apps Script ===
+  const pickFiles = document.getElementById('pickFiles');
+  const fileInput = document.getElementById('fileInput');
+  const attachmentsList = document.getElementById('attachmentsList');
+
+  pickFiles.addEventListener('click', ()=> fileInput.click());
+
+  fileInput.addEventListener('change', async (e)=>{
+    const files = Array.from(e.target.files || []);
+    if(!files.length) return;
+    try{
+      const uploaded = await uploadFilesToDrive(files);
+      newAttachments.push(...uploaded); // { name, url, mimeType }
+      drawAttachmentsUI();
+      alert('Uploaded to Drive.');
+    }catch(err){
+      console.error(err); alert('Drive upload failed: ' + err.message);
+    }finally{
+      fileInput.value = '';
+    }
+  });
+
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onload = () => {
+        const res = fr.result; // data:...;base64,XXXX
+        const base64 = String(res).split(',')[1] || "";
+        resolve({ name: file.name, mimeType: file.type || "application/octet-stream", dataBase64: base64 });
+      };
+      fr.onerror = reject;
+      fr.readAsDataURL(file);
+    });
+  }
+
+  async function uploadFilesToDrive(files) {
+    const encoded = await Promise.all(files.map(fileToBase64));
+    const res = await fetch(DRIVE_UPLOAD_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ files: encoded })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || "Upload failed");
+    return (data.files || []).map(f => ({
+      name: f.name,
+      url: f.webViewLink || f.url,
+      mimeType: f.mimeType
+    }));
+  }
+
+  function drawAttachmentsUI(){
+    attachmentsList.innerHTML = newAttachments.map((a,i)=>`
+      <div class="flex items-center gap-2 border border-[var(--border-strong)] rounded-md px-2 py-1">
+        ${renderAttachmentPreviewThumb(a)}
+        <a class="text-sm underline" href="${a.url}" target="_blank" rel="noopener">${escapeHtml(a.name||'file')}</a>
+        <button class="btn" data-remove="${i}" title="Remove"><i data-lucide="x"></i></button>
+      </div>
+    `).join('');
+    attachmentsList.querySelectorAll('button[data-remove]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const idx = Number(btn.getAttribute('data-remove'));
+        newAttachments.splice(idx,1);
+        drawAttachmentsUI();
+      });
+    });
+    lucide.createIcons();
+  }
+
+  function renderAttachmentPreviewThumb(a){
+    const url = a.url || '';
+    const name = (a.name||'').toLowerCase();
+    const isImage = /\.(png|jpg|jpeg|gif|webp|bmp|svg)$/i.test(name) || /image\//i.test(a.mimeType || '');
+    if (isImage) {
+      const imgSrc = drivePreviewSrc(url);
+      return `<img class="thumb" src="${imgSrc}" alt="">`;
+    }
+    return `<div class="thumb flex items-center justify-center"><i data-lucide="file"></i></div>`;
+  }
+
+  // === Modal & Events ===
+  const addBtn = document.getElementById('addBtn');
+  const syncBtn = document.getElementById('syncBtn');
+  const addModal = document.getElementById('addModal');
+  const closeModal = document.getElementById('closeModal');
+  const cancelAdd = document.getElementById('cancelAdd');
+  const saveAdd = document.getElementById('saveAdd');
+  const clearBtn = document.getElementById('clearAdd');
+  const titleInput = document.getElementById('titleInput');
+  const categoryInput = document.getElementById('categoryInput');
+  const contentInput = document.getElementById('contentInput');
+  const tagsInput = document.getElementById('tagsInput');
+  const waPreview = document.getElementById('waPreview');
+
+  function openModal(){ addModal.classList.remove('hidden'); titleInput.focus(); }
+  function closeModalFn(){ addModal.classList.add('hidden'); }
+  function clearForm(){
+    titleInput.value=''; categoryInput.value=''; contentInput.value=''; tagsInput.value='';
+    waPreview.innerHTML='(start typing above)'; newAttachments=[]; drawAttachmentsUI();
+    titleInput.focus();
+  }
+
+  addBtn.addEventListener('click', openModal);
+  closeModal.addEventListener('click', closeModalFn);
+  cancelAdd.addEventListener('click', closeModalFn);
+  clearBtn.addEventListener('click', clearForm);
+  saveAdd.addEventListener('click', createItem);
+
+  contentInput.addEventListener('input', ()=> waPreview.innerHTML = whatsappPreviewHTML(contentInput.value||'') );
+  document.getElementById('searchInput').addEventListener('input', render);
+  document.getElementById('categorySelect').addEventListener('change', render);
+  syncBtn.addEventListener('click', syncContents);
+
+  window.addEventListener('DOMContentLoaded', ()=>{ renderCategories(); syncContents(); });
+</script>
 </body>
 </html>
