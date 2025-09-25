@@ -321,21 +321,32 @@
     });
   }
 
-  async function uploadFilesToDrive(files) {
-    const encoded = await Promise.all(files.map(fileToBase64));
-    const res = await fetch(DRIVE_UPLOAD_ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ files: encoded })
-    });
-    const data = await res.json();
-    if (!data.success) throw new Error(data.error || "Upload failed");
-    return (data.files || []).map(f => ({
-      name: f.name,
-      url: f.webViewLink || f.url,
-      mimeType: f.mimeType
-    }));
+ async function uploadFilesToDrive(files) {
+  // Convert to base64 (raw, without data: prefix)
+  const encoded = await Promise.all(files.map(fileToBase64));
+
+  // IMPORTANT: do NOT set Content-Type header. Let the browser default to text/plain.
+  // Setting application/json triggers a CORS preflight which Apps Script doesn't handle by default.
+  const res = await fetch(DRIVE_UPLOAD_ENDPOINT, {
+    method: "POST",
+    body: JSON.stringify({ files: encoded })  // string body => browser uses text/plain;charset=UTF-8
+  });
+
+  // If the network layer blocks us before response, this throws (caught by caller)
+  const data = await res.json().catch(() => ({ success: false, error: "Invalid JSON from server" }));
+
+  if (!res.ok || !data.success) {
+    throw new Error(data.error || ("HTTP " + res.status));
   }
+
+  // Normalize attachments for the app
+  return (data.files || []).map(f => ({
+    name: f.name,
+    url: f.webViewLink || f.url,   // prefer Drive view link
+    mimeType: f.mimeType
+  }));
+}
+
 
   function drawAttachmentsUI(){
     attachmentsList.innerHTML = newAttachments.map((a,i)=>`
