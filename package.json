@@ -1,7 +1,9 @@
 {
+  "name": "whatsapp-content-library",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "dependencies": {
-    "@notionhq/client": "^2.2.15"
+    "@notionhq/client": "^2.2.14"
   }
 }
