@@ -26,7 +26,7 @@
     .scrollbar-thin::-webkit-scrollbar{ height:6px; width:6px;}
     .scrollbar-thin::-webkit-scrollbar-thumb{ background:rgba(0,0,0,.2); border-radius:999px;}
 
-    /* WhatsApp-like preview bubble in modal */
+    /* WhatsApp-like preview bubble (used in modal AND on cards) */
     .wa-bubble {
       background:#e7f1e9;
       border:1px solid rgba(0,0,0,.08);
@@ -163,19 +163,17 @@
   // ====== UTILS ======
   const escapeHtml = (s='') => s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
 
-  // Convert **bold**/__italic__/~~strike~~/`code` to WhatsApp markers,
-  // and also produce an HTML preview (bold/italic/strike/code) for the modal.
+  // Convert **bold**/__italic__/~~strike~~/`code` into WhatsApp markers
   const toWhatsApp = (text='') => text
     .replace(/\*\*(.*?)\*\*/g,'*$1*')
     .replace(/__(.*?)__/g,'_$1_')
     .replace(/~~(.*?)~~/g,'~$1~')
     .replace(/`(.*?)`/g,'$1');
 
-  // HTML preview for the modal (renders bold/italic/strike/code visually)
+  // Build HTML preview (bold/italic/strike/code) for the modal AND the cards
   function whatsappPreviewHTML(text=''){
     const safe = escapeHtml(text);
     return safe
-      // Convert existing WhatsApp markers *bold* _italic_ ~strike~ `code` to HTML
       .replace(/\*(.*?)\*/g,'<strong>$1</strong>')
       .replace(/_(.*?)_/g,'<em>$1</em>')
       .replace(/~(.*?)~/g,'<s>$1</s>')
@@ -242,7 +240,7 @@
     const body = {
       title,
       content,
-      formattedContent: toWhatsApp(content), // store WhatsApp-formatted text
+      formattedContent: toWhatsApp(content), // what gets copied
       category,
       tags,
       dateCreated: new Date().toISOString().slice(0,10),
@@ -263,7 +261,7 @@
     finally{ updateSaveEnabled(); }
   }
 
-  // ====== RENDER (uniform cards + scrollable WhatsApp preview) ======
+  // ====== RENDER (uniform cards + HTML WhatsApp preview) ======
   function render(){
     const grid = document.getElementById('contentGrid');
     const search = (document.getElementById('searchInput').value||'').toLowerCase();
@@ -276,6 +274,7 @@
 
     grid.innerHTML = filtered.map(c => {
       const waText = c.formattedContent || toWhatsApp(c.content || '');
+      const waHTML = whatsappPreviewHTML(waText);
       return `
       <div class="h-full">
         <div class="card p-4 rounded-xl shadow-soft flex flex-col h-[420px]">
@@ -297,10 +296,10 @@
             `).join('')}
           </div>` : ''}
 
-          <!-- Fixed-height, scrollable WhatsApp preview (text, not HTML) -->
+          <!-- Fixed-height, scrollable WhatsApp HTML preview on the card -->
           <div class="mt-3 h-40 rounded-lg border border-[var(--border)] bg-[var(--muted)] overflow-hidden">
             <div class="h-full overflow-auto p-3 text-sm scrollbar-thin">
-              <pre class="whitespace-pre-wrap">${escapeHtml(waText)}</pre>
+              <div class="wa-bubble whitespace-pre-wrap">${waHTML}</div>
             </div>
           </div>
 
@@ -386,9 +385,7 @@
   // Live WhatsApp-style HTML preview in the modal bubble
   contentInput.addEventListener('input', ()=>{
     const text = contentInput.value || '';
-    // 1) Convert Markdown-like to WhatsApp markers (for what you'll actually copy later)
     const waText = toWhatsApp(text);
-    // 2) Render HTML (bold/italic/strike/code) for preview bubble
     waPreview.innerHTML = whatsappPreviewHTML(waText);
     updateSaveEnabled();
   });
