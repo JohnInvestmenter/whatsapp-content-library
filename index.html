@@ -51,7 +51,7 @@
 
     <!-- Grid -->
     <section>
-      <div id="contentGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      <div id="contentGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch"></div>
     </section>
 
     <!-- Stats -->
@@ -138,7 +138,7 @@
   lucide.createIcons();
   let contents = [];
   let newAttachments = []; // {name, url, mimeType}
-  let isUploading = false; // <— guard uploads
+  let isUploading = false;
 
   // ====== UTILS ======
   const escapeHtml = (s='') => s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
@@ -148,12 +148,11 @@
     .replace(/~~(.*?)~~/g,'~$1~')
     .replace(/`(.*?)`/g,'$1');
 
-  // Base64 (keeps original filename)
   function fileToBase64(file){
     return new Promise((resolve, reject)=>{
       const fr = new FileReader();
       fr.onload = ()=>{
-        const res = fr.result; // data:...;base64,XXX
+        const res = fr.result;
         const base64 = String(res).split(',')[1] || '';
         resolve({ name: file.name, mimeType: file.type || 'application/octet-stream', dataBase64: base64 });
       };
@@ -162,7 +161,6 @@
     });
   }
 
-  // Upload to GAS; IMPORTANT: no explicit Content-Type (avoid preflight)
   async function uploadFilesToDrive(files){
     const encoded = await Promise.all(files.map(fileToBase64));
     const res = await fetch(DRIVE_UPLOAD_ENDPOINT, { method:'POST', body: JSON.stringify({ files: encoded }) });
@@ -173,23 +171,18 @@
 
   function setUploading(on){
     isUploading = on;
-    // Disable/enable Save & Pick Files, update texts
-    saveAdd.disabled = on;
+    saveAdd.disabled = on || !canSaveNow();
     pickFiles.disabled = on;
     document.getElementById('saveText').textContent = on ? 'Uploading…' : 'Save';
     document.getElementById('saveSpinner').classList.toggle('hidden', !on);
     document.getElementById('pickFilesText').textContent = on ? 'Uploading…' : 'Choose files';
   }
-
   function canSaveNow(){
     const hasTitle = (titleInput.value||'').trim().length > 0;
     const hasContent = (contentInput.value||'').trim().length > 0;
     return hasTitle && hasContent && !isUploading;
   }
-
-  function updateSaveEnabled(){
-    saveAdd.disabled = !canSaveNow();
-  }
+  function updateSaveEnabled(){ saveAdd.disabled = !canSaveNow(); }
 
   // ====== API ======
   async function syncContents(){
@@ -204,27 +197,26 @@
   }
 
   async function createItem(){
-    if (isUploading) return; // guard
+    if (isUploading) return;
     const title = (titleInput.value||'').trim();
     const category = categoryInput.value || 'General';
     const content = (contentInput.value||'').trim();
     const tags = (tagsInput.value||'').split(',').map(t=>t.trim()).filter(Boolean);
-
     if(!title || !content){ updateSaveEnabled(); return; }
 
     const body = {
       title,
       content,
-      formattedContent: formatForWhatsApp(content),
+      formattedContent: formatForWhatsApp(content), // still stored; we just preview raw on card
       category,
       tags,
       dateCreated: new Date().toISOString().slice(0,10),
       useCount: 0,
-      attachments: newAttachments.map(a=>({ name:a.name, url:a.url })) // Notion will store as files[]
+      attachments: newAttachments.map(a=>({ name:a.name, url:a.url }))
     };
 
     try{
-      saveAdd.disabled = true; // prevent double click during POST
+      saveAdd.disabled = true;
       const r = await fetch(API, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
       const j = await r.json().catch(()=> ({}));
       if(!r.ok || j.error){ throw new Error(j.message || j.error || ('HTTP '+r.status)); }
@@ -247,37 +239,41 @@
       (cat==='all' || c.category===cat)
     );
 
+    // Uniform card height: use min-h and a fixed-height preview area
     grid.innerHTML = filtered.map(c => `
-      <div class="card p-4 rounded-xl shadow-soft space-y-3">
-        <div class="flex justify-between items-start">
-          <div>
-            <h3 class="font-semibold text-lg">${escapeHtml(c.title||'')}</h3>
-            <div class="flex items-center gap-2 mt-1">
-              <span class="chip bg-[var(--brand)] text-[var(--brand-ink)]">${escapeHtml(c.category||'')}</span>
-              <span class="text-xs text-[var(--muted-ink)]">Used ${Number(c.useCount||0)} times</span>
+      <div class="h-full">
+        <div class="card p-4 rounded-xl shadow-soft flex flex-col h-full min-h-[300px]">
+          <div class="flex justify-between items-start">
+            <div>
+              <h3 class="font-semibold text-lg">${escapeHtml(c.title||'')}</h3>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="chip bg-[var(--brand)] text-[var(--brand-ink)]">${escapeHtml(c.category||'')}</span>
+                <span class="text-xs text-[var(--muted-ink)]">Used ${Number(c.useCount||0)} times</span>
+              </div>
             </div>
+            <button class="btn copyBtn" data-id="${escapeHtml(c.id||'')}"><i data-lucide="copy"></i> Copy</button>
           </div>
-          <button class="btn copyBtn" data-id="${escapeHtml(c.id||'')}"><i data-lucide="copy"></i> Copy</button>
-        </div>
 
-        ${(c.attachments&&c.attachments.length) ? `
-        <div class="flex flex-wrap gap-2">
-          ${c.attachments.map(a => `
-            <a href="${escapeHtml(a.url)}" target="_blank" class="chip bg-[var(--chip)] text-[var(--chip-ink)] hover:opacity-90">${escapeHtml(a.name)}</a>
-          `).join('')}
-        </div>` : ''}
+          ${(c.attachments&&c.attachments.length) ? `
+          <div class="flex flex-wrap gap-2 mt-2">
+            ${c.attachments.map(a => `
+              <a href="${escapeHtml(a.url)}" target="_blank" class="chip bg-[var(--chip)] text-[var(--chip-ink)] hover:opacity-90">${escapeHtml(a.name)}</a>
+            `).join('')}
+          </div>` : ''}
 
-        <div class="rounded-lg border border-[var(--border)] bg-[var(--muted)] p-3 text-sm">
-          <pre class="whitespace-pre-wrap">${escapeHtml(c.formattedContent||c.content||'')}</pre>
-        </div>
+          <!-- Fixed-height ORIGINAL content preview (not WhatsApp formatted) -->
+          <div class="rounded-lg border border-[var(--border)] bg-[var(--muted)] p-3 text-sm mt-3 h-32 overflow-auto">
+            <pre class="whitespace-pre-wrap">${escapeHtml(c.content||'')}</pre>
+          </div>
 
-        <div class="flex flex-wrap gap-1">
-          ${(c.tags||[]).map(t=>`<span class="chip bg-black/5">${escapeHtml('#'+t)}</span>`).join('')}
-        </div>
+          <div class="flex flex-wrap gap-1 mt-3">
+            ${(c.tags||[]).map(t=>`<span class="chip bg-black/5">${escapeHtml('#'+t)}</span>`).join('')}
+          </div>
 
-        <div class="text-xs text-[var(--muted-ink)] flex justify-between">
-          <span>Created: ${escapeHtml(c.dateCreated||'')}</span>
-          ${c.lastUsed ? `<span>Last used: ${escapeHtml(c.lastUsed)}</span>` : '<span></span>'}
+          <div class="text-xs text-[var(--muted-ink)] flex justify-between mt-auto pt-3">
+            <span>Created: ${escapeHtml(c.dateCreated||'')}</span>
+            ${c.lastUsed ? `<span>Last used: ${escapeHtml(c.lastUsed)}</span>` : '<span></span>'}
+          </div>
         </div>
       </div>
     `).join('');
@@ -362,7 +358,6 @@
   document.getElementById('categorySelect').addEventListener('change', render);
   syncBtn.addEventListener('click', syncContents);
 
-  // Attachments UI
   function drawAttachmentsUI(){
     attachmentsList.innerHTML = newAttachments.map((a,idx)=>`
       <div class="flex items-center gap-2 border border-[var(--border)] rounded-lg px-2 py-1">
@@ -381,14 +376,13 @@
     lucide.createIcons();
   }
 
-  // File picking & upload — Save is disabled until uploads complete
   pickFiles.addEventListener('click', ()=> fileInput.click());
   fileInput.addEventListener('change', async (e)=>{
     const files = Array.from(e.target.files||[]);
     if(!files.length) return;
     try{
       setUploading(true);
-      const uploaded = await uploadFilesToDrive(files); // original names
+      const uploaded = await uploadFilesToDrive(files);
       newAttachments.push(...uploaded);
       drawAttachmentsUI();
       alert('Uploaded to Drive.');
