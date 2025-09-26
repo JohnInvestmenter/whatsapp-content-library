@@ -64,6 +64,7 @@
 
   <main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- Library -->
       <div class="lg:col-span-2 space-y-8">
         <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
           <div>
@@ -80,6 +81,7 @@
           </div>
         </div>
 
+        <!-- Filters -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
           <input id="searchInput" placeholder="Search…" class="px-3 py-2 rounded-lg bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark"/>
           <select id="categorySelect" class="form-select px-3 py-2 rounded-lg bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark"><option value="all">All Categories</option></select>
@@ -89,11 +91,13 @@
           </div>
         </div>
 
+        <!-- Cards Grid -->
         <div id="contentGrid" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 items-stretch"></div>
 
         <div id="messageBar" class="hidden mt-4"></div>
       </div>
 
+      <!-- Add New Content + Preview -->
       <div class="lg:col-span-1 space-y-8">
         <div class="bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark p-6 rounded-lg space-y-6">
           <h3 class="text-xl font-bold">Add New Content</h3>
@@ -102,18 +106,46 @@
               <label for="title" class="text-sm font-medium">Title</label>
               <input id="title" class="mt-1 block w-full px-3 py-2 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg focus:outline-none focus:ring-primary focus:border-primary sm:text-sm placeholder-subtle-light dark:placeholder-subtle-dark" placeholder="Enter title" type="text"/>
             </div>
+
             <div>
               <label for="category" class="text-sm font-medium">Category</label>
               <select id="category" class="form-select mt-1 block w-full pl-3 pr-10 py-2 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg focus:outline-none focus:ring-primary focus:border-primary sm:text-sm appearance-none"></select>
             </div>
+
+            <!-- Toolbar + Textarea -->
             <div>
               <label for="content" class="text-sm font-medium">Content</label>
-              <textarea id="content" class="mt-1 block w-full px-3 py-2 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg focus:outline-none focus:ring-primary focus:border-primary sm:text-sm placeholder-subtle-light dark:placeholder-subtle-dark" placeholder="Use **bold**, __italic__, ~~strike~~ and `code`." rows="6"></textarea>
+
+              <div class="mt-2 flex gap-1">
+                <button type="button" class="wa-btn px-3 py-2 rounded-lg border border-border-light dark:border-border-dark hover:bg-primary/10 dark:hover:bg-primary/20 text-sm font-bold"
+                        data-wrap-before="**" data-wrap-after="**" title="Bold (Ctrl/⌘+B)">
+                  <span class="material-symbols-outlined text-base align-middle">format_bold</span>
+                </button>
+                <button type="button" class="wa-btn px-3 py-2 rounded-lg border border-border-light dark:border-border-dark hover:bg-primary/10 dark:hover:bg-primary/20 text-sm font-bold"
+                        data-wrap-before="__" data-wrap-after="__" title="Italic (Ctrl/⌘+I)">
+                  <span class="material-symbols-outlined text-base align-middle">format_italic</span>
+                </button>
+                <button type="button" class="wa-btn px-3 py-2 rounded-lg border border-border-light dark:border-border-dark hover:bg-primary/10 dark:hover:bg-primary/20 text-sm font-bold"
+                        data-wrap-before="~~" data-wrap-after="~~" title="Strikethrough (Ctrl/⌘+Shift+X)">
+                  <span class="material-symbols-outlined text-base align-middle">strikethrough_s</span>
+                </button>
+                <button type="button" class="wa-btn px-3 py-2 rounded-lg border border-border-light dark:border-border-dark hover:bg-primary/10 dark:hover:bg-primary/20 text-sm font-bold"
+                        data-wrap-before="`" data-wrap-after="`" title="Inline code (Ctrl/⌘+`)">
+                  <span class="material-symbols-outlined text-base align-middle">code</span>
+                </button>
+              </div>
+
+              <textarea id="content"
+                class="mt-2 block w-full px-3 py-2 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg focus:outline-none focus:ring-primary focus:border-primary sm:text-sm placeholder-subtle-light dark:placeholder-subtle-dark"
+                placeholder="Use **bold**, __italic__, ~~strike~~ and `code`."
+                rows="6"></textarea>
             </div>
+
             <div>
               <label for="tags" class="text-sm font-medium">Tags</label>
               <input id="tags" class="mt-1 block w-full px-3 py-2 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg focus:outline-none focus:ring-primary focus:border-primary sm:text-sm placeholder-subtle-light dark:placeholder-subtle-dark" placeholder="Enter tags, separated by commas" type="text"/>
             </div>
+
             <div>
               <label class="text-sm font-medium">Attachments</label>
               <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-border-light dark:border-border-dark border-dashed rounded-lg">
@@ -131,6 +163,7 @@
                 </div>
               </div>
             </div>
+
             <div class="pt-4 flex flex-col sm:flex-row-reverse gap-3">
               <button id="saveBtn" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-primary hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary dark:focus:ring-offset-background-dark disabled:opacity-50" type="submit" disabled>
                 <span id="saveText">Save</span>
@@ -166,7 +199,7 @@
             </div>
           </div>
         </div>
-      </div>
+      </div> <!-- /right column -->
     </div>
   </main>
 
@@ -232,12 +265,12 @@
   const messageBar = $('#messageBar');
   const escapeHtml = (s='') => s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
 
-  // WhatsApp markers
+  // WhatsApp marker conversions (markdown-ish → WA & preview)
   const toWhatsApp = (text='') => text
     .replace(/\*\*(.*?)\*\*/g,'*$1*')
     .replace(/__(.*?)__/g,'_$1_')
     .replace(/~~(.*?)~~/g,'~$1~')
-    .replace(/`(.*?)`/g,'$1'); // inline code becomes plain
+    .replace(/`(.*?)`/g,'$1'); // inline code becomes plain for final copy
 
   function whatsappPreviewHTML(text=''){
     const safe = escapeHtml(text);
@@ -351,7 +384,7 @@
       const waHTML = whatsappPreviewHTML(waText);
       const used = Number(c.useCount||0);
 
-      // Find a thumbnail image from attachments
+      // find a thumbnail
       let img = null;
       if (Array.isArray(c.attachments)) {
         img = c.attachments.find(a => /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test((a.name||'') + (a.url||'')));
@@ -359,7 +392,7 @@
 
       return `
         <div class="h-full">
-          <!-- Fixed uniform card height -->
+          <!-- Fixed uniform height; preview flexes -->
           <div class="border border-border-light dark:border-border-dark rounded-lg p-4 flex flex-col h-[420px] bg-background-light dark:bg-background-dark">
             <div class="flex items-start justify-between gap-3">
               <div class="flex-1">
@@ -385,7 +418,6 @@
               </div>
             `:''}
 
-            <!-- Preview area fills the remaining space (same size on all cards) -->
             <div class="mt-3 flex-1 min-h-0 rounded-lg border border-border-light dark:border-border-dark overflow-hidden">
               <div class="h-full overflow-auto p-3 text-sm scrollbar-thin bg-background-light dark:bg-background-dark">
                 ${img ? `
@@ -413,7 +445,7 @@
         </div>`;
     }).join('');
 
-    // Bind actions
+    // actions
     grid.querySelectorAll('.copyBtn').forEach(btn=>{
       btn.addEventListener('click', ()=> copyToClipboard(btn.getAttribute('data-id')));
     });
@@ -493,7 +525,7 @@
     });
   }
 
-  // drag & drop onto form
+  // Drag & drop
   ;['dragenter','dragover'].forEach(evt=>{
     document.addEventListener(evt, e=>{ if(e.target.closest('#addForm')) { e.preventDefault(); } }, false);
   });
@@ -530,6 +562,35 @@
   title.addEventListener('input', ()=>{ previewTitle.textContent = title.value||'—'; updateSaveEnabled(); });
   content.addEventListener('input', ()=>{ const waText = toWhatsApp(content.value||''); waPreview.innerHTML = whatsappPreviewHTML(waText) || '(start typing…)'; updateSaveEnabled(); });
 
+  // ===== Toolbar logic =====
+  function wrapSelection(textarea, before, after){
+    const start = textarea.selectionStart ?? 0;
+    const end   = textarea.selectionEnd   ?? 0;
+    const value = textarea.value;
+    const selected = start === end ? 'text' : value.slice(start, end);
+    const wrapped = before + selected + after;
+    textarea.value = value.slice(0, start) + wrapped + value.slice(end);
+    const newStart = start + before.length;
+    const newEnd   = newStart + selected.length;
+    textarea.focus();
+    textarea.setSelectionRange(newStart, newEnd);
+    content.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  function initWAToolbar(){
+    document.querySelectorAll('.wa-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        wrapSelection(content, btn.getAttribute('data-wrap-before')||'', btn.getAttribute('data-wrap-after')||'');
+      });
+    });
+    content.addEventListener('keydown', (e)=>{
+      const meta = e.ctrlKey || e.metaKey;
+      if(meta && !e.shiftKey && e.key.toLowerCase()==='b'){ e.preventDefault(); wrapSelection(content,'**','**'); }
+      if(meta && !e.shiftKey && e.key.toLowerCase()==='i'){ e.preventDefault(); wrapSelection(content,'__','__'); }
+      if(meta && e.shiftKey && e.key.toLowerCase()==='x'){ e.preventDefault(); wrapSelection(content,'~~','~~'); }
+      if(meta && e.key==='`'){ e.preventDefault(); wrapSelection(content,'`','`'); }
+    });
+  }
+
   // Filters
   const searchInput = document.getElementById('searchInput');
   const categorySelect = document.getElementById('categorySelect');
@@ -555,7 +616,7 @@
     if(categories.includes(current)) sel.value = current;
   }
 
-  // ===== Preview Modal JS =====
+  // ===== Preview Modal =====
   const previewModal     = document.getElementById('previewModal');
   const previewClose     = document.getElementById('previewClose');
   const previewDismiss   = document.getElementById('previewDismiss');
@@ -564,6 +625,7 @@
   const modalAttachments = document.getElementById('modalAttachments');
   const modalCopy        = document.getElementById('modalCopy');
   let modalCurrentItem   = null;
+
   function openPreview(item){
     modalCurrentItem = item;
     modalTitle.textContent = item.title || '—';
@@ -586,7 +648,7 @@
   });
 
   // Boot
-  window.addEventListener('DOMContentLoaded', ()=>{ renderCategories(); syncContents(); updateSaveEnabled(); });
+  window.addEventListener('DOMContentLoaded', ()=>{ renderCategories(); initWAToolbar(); syncContents(); updateSaveEnabled(); });
 </script>
 </body>
 </html>
