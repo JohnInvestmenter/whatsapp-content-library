@@ -64,7 +64,6 @@
 
   <main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <!-- Library -->
       <div class="lg:col-span-2 space-y-8">
         <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
           <div>
@@ -81,7 +80,6 @@
           </div>
         </div>
 
-        <!-- Filters -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
           <input id="searchInput" placeholder="Search…" class="px-3 py-2 rounded-lg bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark"/>
           <select id="categorySelect" class="form-select px-3 py-2 rounded-lg bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark"><option value="all">All Categories</option></select>
@@ -91,14 +89,11 @@
           </div>
         </div>
 
-        <!-- Grid -->
         <div id="contentGrid" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 items-stretch"></div>
 
-        <!-- Empty state / messages -->
         <div id="messageBar" class="hidden mt-4"></div>
       </div>
 
-      <!-- Add New Content + Preview -->
       <div class="lg:col-span-1 space-y-8">
         <div class="bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark p-6 rounded-lg space-y-6">
           <h3 class="text-xl font-bold">Add New Content</h3>
@@ -155,7 +150,7 @@
           <p class="text-sm text-subtle-light dark:text-subtle-dark">Live preview of how your content will appear.</p>
           <div class="bg-gray-200 dark:bg-gray-800 p-4 rounded-lg">
             <div class="flex items-start gap-2.5">
-              <span class="relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full"><img alt="User Avatar" class="aspect-square h-full w-full" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBYUkuPaqlc7Nel9oc560erd1BvbguB5yNZrcmXqmbisB0WNNynT1ZIYqiI8iCuff2_fjr6E8tSuUyfc4EkpHqfQDtolRQJjqSac-nVAsKSdMdEBtbBzQZPRm92VYagdD_P5-Xj1oQmH8HlN66vSt6jC1OlJEY2sE_BkCOFsQ8majy-AgVSTIkPkG9ES3GSAtt7EsmPpFd_6QoDmIM-AwozG_2rEFvLrdwUL9flzc9VRlpvBkd-Dz3yJMBJnBmgzfhZbim0wbMgtdI"/></span>
+              <span class="relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full"><img alt="User Avatar" class="aspect-square h-full w-full" src="https://lh3.googleusercontent.com/a/ACg8ocK_3tA3yV-5c-Q1J5YgX_o_E_4z-e-yH2gY_e-Z6U=s96-c"/></span>
               <div class="grid gap-1 w-full">
                 <div id="previewTitle" class="font-semibold text-gray-900 dark:text-gray-50">—</div>
                 <div id="waPreview" class="text-sm leading-snug text-gray-700 dark:text-gray-300 whitespace-pre-wrap max-h-48 overflow-auto scrollbar-thin">(start typing…)</div>
@@ -167,7 +162,6 @@
     </div>
   </main>
 
-  <!-- Preview Modal -->
   <div id="previewModal" class="fixed inset-0 hidden items-center justify-center bg-black/60 z-50 p-4">
     <div class="w-full max-w-2xl bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg shadow-xl">
       <div class="flex items-center justify-between p-4 border-b border-border-light dark:border-border-dark">
@@ -178,7 +172,7 @@
         <p class="text-sm text-subtle-light dark:text-subtle-dark mb-3">Live preview of how this content will appear.</p>
         <div class="bg-gray-200 dark:bg-gray-800 p-4 rounded-lg">
           <div class="flex items-start gap-2.5">
-            <span class="relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full"><img id="modalAvatar" class="aspect-square h-full w-full" alt="Avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBYUkuPaqlc7Nel9oc560erd1BvbguB5yNZrcmXqmbisB0WNNynT1ZIYqiI8iCuff2_fjr6E8tSuUyfc4EkpHqfQDtolRQJjqSac-nVAsKSdMdEBtbBzQZPRm92VYagdD_P5-Xj1oQmH8HlN66vSt6jC1OlJEY2sE_BkCOFsQ8majy-AgVSTIkPkG9ES3GSAtt7EsmPpFd_6QoDmIM-AwozG_2rEFvLrdwUL9flzc9VRlpvBkd-Dz3yJMBJnBmgzfhZbim0wbMgtdI"/></span>
+            <span class="relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full"><img id="modalAvatar" class="aspect-square h-full w-full" alt="Avatar" src="https://lh3.googleusercontent.com/a/ACg8ocK_3tA3yV-5c-Q1J5YgX_o_E_4z-e-yH2gY_e-Z6U=s96-c"/></span>
             <div class="grid gap-1 w-full">
               <div id="modalTitle" class="font-semibold text-gray-900 dark:text-gray-50">—</div>
               <div id="modalBody" class="text-sm leading-snug text-gray-700 dark:text-gray-300 whitespace-pre-wrap max-h-72 overflow-auto scrollbar-thin">(content)</div>
@@ -224,14 +218,14 @@
     .replace(/\*\*(.*?)\*\*/g,'*$1*')
     .replace(/__(.*?)__/g,'_$1_')
     .replace(/~~(.*?)~~/g,'~$1~')
-    .replace(/`(.*?)`/g,'$1');
+    .replace(/`(.*?)`/g,'```$1```');
   function whatsappPreviewHTML(text=''){
     const safe = escapeHtml(text);
     return safe
       .replace(/\*(.*?)\*/g,'<strong>$1<\/strong>')
       .replace(/_(.*?)_/g,'<em>$1<\/em>')
       .replace(/~(.*?)~/g,'<s>$1<\/s>')
-      .replace(/`([^`]+)`/g,'<code>$1<\/code>');
+      .replace(/```([^`]+)```/g,'<code>$1<\/code>');
   }
   function fileToBase64(file){
     return new Promise((resolve, reject)=>{
@@ -339,21 +333,21 @@
       const img = (c.attachments||[]).find(a=>/\.(png|jpe?g|gif|webp)$/i.test(a.name||a.url||''));
       return `
         <div class="h-full">
-          <div class="border border-border-light dark:border-border-dark rounded-lg p-4 flex flex-col h-[420px] bg-background-light dark:bg-background-dark">
+          <div class="border border-border-light dark:border-border-dark rounded-lg p-4 flex flex-col h-full bg-background-light dark:bg-background-dark">
             <div class="flex items-start justify-between gap-3">
-              <div>
-                <h3 class="font-semibold text-base leading-tight">${escapeHtml(c.title||'')}</h3>
+              <div class="flex-1">
+                <h3 class="font-semibold text-sm leading-tight">${escapeHtml(c.title||'')}</h3>
                 <div class="mt-1 flex items-center gap-2 text-xs text-subtle-light dark:text-subtle-dark">
                   <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/20 font-bold">${escapeHtml(c.category||'')}</span>
                   <span>Used ${used} times</span>
                 </div>
               </div>
-              <div class="flex gap-2 shrink-0">
-                <button class="previewBtn inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-border-light dark:border-border-dark hover:bg-primary/10 dark:hover:bg-primary/20 text-sm font-bold" data-id="${escapeHtml(String(c.id||''))}">
-                  <span class="material-symbols-outlined text-base">visibility</span> Preview
+              <div class="flex gap-1 shrink-0">
+                <button class="previewBtn p-2 rounded-lg border border-border-light dark:border-border-dark hover:bg-primary/10 dark:hover:bg-primary/20" title="Preview" data-id="${escapeHtml(String(c.id||''))}">
+                  <span class="material-symbols-outlined text-base leading-none">visibility</span>
                 </button>
-                <button class="copyBtn inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-border-light dark:border-border-dark hover:bg-primary/10 dark:hover:bg-primary/20 text-sm font-bold" data-id="${escapeHtml(String(c.id||''))}">
-                  <span class="material-symbols-outlined text-base">content_copy</span> Copy
+                <button class="copyBtn p-2 rounded-lg border border-border-light dark:border-border-dark hover:bg-primary/10 dark:hover:bg-primary/20" title="Copy" data-id="${escapeHtml(String(c.id||''))}">
+                  <span class="material-symbols-outlined text-base leading-none">content_copy</span>
                 </button>
               </div>
             </div>
@@ -394,16 +388,6 @@
         if(item) openPreview(item);
       });
     });
-  }
-
-  function renderCategories(){
-    const sel = document.getElementById('categorySelect');
-    const current = sel.value||'all';
-    sel.innerHTML = '<option value="all">All Categories</option>' + categories.map(c=>`<option value="${c}">${c}</option>`).join('');
-    sel.value = current;
-
-    const formSel = document.getElementById('category');
-    formSel.innerHTML = '<option value="">Select category</option>' + categories.map(c=>`<option value="${c}">${c}</option>`).join('');
   }
 
   async function copyToClipboard(id){
@@ -450,7 +434,7 @@
     addForm.reset();
     newAttachments = []; drawAttachmentsUI();
     previewTitle.textContent = '—';
-    waPreview.textContent = '(start typing…)';
+    waPreview.innerHTML = '(start typing…)';
     updateSaveEnabled();
   }
 
@@ -459,7 +443,9 @@
       <div class="inline-flex items-center gap-2 border border-border-light dark:border-border-dark rounded px-2 py-1">
         <span class="material-symbols-outlined text-base">description</span>
         <a href="${escapeHtml(a.url)}" target="_blank" class="text-sm underline">${escapeHtml(a.name)}</a>
-        <button class="removeAtt px-2 py-1 text-xs border border-border-light dark:border-border-dark rounded" data-idx="${idx}" ${isUploading?'disabled':''}>Remove</button>
+        <button type="button" class="removeAtt px-1 text-subtle-light dark:text-subtle-dark hover:text-red-500" data-idx="${idx}" ${isUploading?'disabled':''}>
+          <span class="material-symbols-outlined text-base leading-none">close</span>
+        </button>
       </div>
     `).join('') || '<div class="text-sm text-subtle-light dark:text-subtle-dark">No files yet.</div>';
     attachmentsList.querySelectorAll('.removeAtt').forEach(b=>{
@@ -518,7 +504,7 @@
 
   // Actions
   document.getElementById('syncBtn').addEventListener('click', syncContents);
-  document.getElementById('scrollToForm').addEventListener('click', ()=>{ document.getElementById('title').focus(); window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.getElementById('scrollToForm').addEventListener('click', ()=>{ document.getElementById('addForm').scrollIntoView({ behavior: 'smooth' }); title.focus(); });
   document.getElementById('addForm').addEventListener('submit', (e)=>{ e.preventDefault(); createItem(); });
   cancelBtn.addEventListener('click', clearForm);
   clearBtn.addEventListener('click', clearForm);
@@ -530,7 +516,7 @@
     const sel = document.getElementById('categorySelect');
     const current = sel.value||'all';
     sel.innerHTML = '<option value="all">All Categories</option>' + categories.map(c=>`<option value="${c}">${c}</option>`).join('');
-    sel.value = current;
+    if(categories.includes(current)) sel.value = current;
   }
 
   // ===== Preview Modal JS =====
@@ -560,7 +546,7 @@
   document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closePreview(); });
   modalCopy.addEventListener('click', async ()=>{
     if(!modalCurrentItem) return;
-    try{ await navigator.clipboard.writeText(modalCurrentItem.formattedContent || modalCurrentItem.content || ''); toast('ok','Copied to clipboard'); }catch(e){ toast('error','Copy failed'); }
+    try{ await navigator.clipboard.writeText(modalCurrentItem.formattedContent || modalCurrentItem.content || ''); toast('ok','Copied to clipboard'); closePreview(); }catch(e){ toast('error','Copy failed'); }
   });
 
   // Boot
