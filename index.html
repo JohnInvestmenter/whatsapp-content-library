@@ -188,6 +188,33 @@
       </div>
     </div>
   </main>
+
+  <!-- Preview Modal -->
+  <div id="previewModal" class="fixed inset-0 hidden items-center justify-center bg-black/60 z-50 p-4">
+    <div class="w-full max-w-2xl bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg shadow-xl">
+      <div class="flex items-center justify-between p-4 border-b border-border-light dark:border-border-dark">
+        <h3 class="text-lg font-bold">WhatsApp Preview</h3>
+        <button id="previewClose" class="p-2 rounded-lg hover:bg-primary/10"><span class="material-symbols-outlined">close</span></button>
+      </div>
+      <div class="p-6">
+        <p class="text-sm text-subtle-light dark:text-subtle-dark mb-3">Live preview of how this content will appear.</p>
+        <div class="bg-gray-200 dark:bg-gray-800 p-4 rounded-lg">
+          <div class="flex items-start gap-2.5">
+            <span class="relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full"><img id="modalAvatar" class="aspect-square h-full w-full" alt="Avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBYUkuPaqlc7Nel9oc560erd1BvbguB5yNZrcmXqmbisB0WNNynT1ZIYqiI8iCuff2_fjr6E8tSuUyfc4EkpHqfQDtolRQJjqSac-nVAsKSdMdEBtbBzQZPRm92VYagdD_P5-Xj1oQmH8HlN66vSt6jC1OlJEY2sE_BkCOFsQ8majy-AgVSTIkPkG9ES3GSAtt7EsmPpFd_6QoDmIM-AwozG_2rEFvLrdwUL9flzc9VRlpvBkd-Dz3yJMBJnBmgzfhZbim0wbMgtdI"/></span>
+            <div class="grid gap-1 w-full">
+              <div id="modalTitle" class="font-semibold text-gray-900 dark:text-gray-50">—</div>
+              <div id="modalBody" class="text-sm leading-snug text-gray-700 dark:text-gray-300 whitespace-pre-wrap max-h-72 overflow-auto scrollbar-thin">(content)</div>
+            </div>
+          </div>
+        </div>
+        <div id="modalAttachments" class="mt-4 flex flex-wrap gap-2"></div>
+      </div>
+      <div class="p-4 border-t border-border-light dark:border-border-dark flex justify-end gap-2">
+        <button id="modalCopy" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border-light dark:border-border-dark hover:bg-primary/10 dark:hover:bg-primary/20 text-sm font-bold"><span class="material-symbols-outlined text-base">content_copy</span> Copy</button>
+        <button id="previewDismiss" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white hover:opacity-90 text-sm font-bold">Close</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -317,9 +344,14 @@
                   <span>Used ${used} times</span>
                 </div>
               </div>
-              <button class="copyBtn inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-border-light dark:border-border-dark hover:bg-primary/10 dark:hover:bg-primary/20 text-sm font-bold" data-id="${escapeHtml(String(c.id||''))}">
-                <span class="material-symbols-outlined text-base">content_copy</span> Copy
-              </button>
+              <div class="flex gap-2">
+                <button class="previewBtn inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-border-light dark:border-border-dark hover:bg-primary/10 dark:hover:bg-primary/20 text-sm font-bold" data-id="${escapeHtml(String(c.id||''))}">
+                  <span class="material-symbols-outlined text-base">visibility</span> Preview
+                </button>
+                <button class="copyBtn inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-border-light dark:border-border-dark hover:bg-primary/10 dark:hover:bg-primary/20 text-sm font-bold" data-id="${escapeHtml(String(c.id||''))}">
+                  <span class="material-symbols-outlined text-base">content_copy</span> Copy
+                </button>
+              </div>
             </div>
 
             ${(c.attachments&&c.attachments.length)?`
@@ -347,8 +379,17 @@
         </div>`;
     }).join('');
 
+    // Bind copy buttons
     grid.querySelectorAll('.copyBtn').forEach(btn=>{
       btn.addEventListener('click', ()=> copyToClipboard(btn.getAttribute('data-id')));
+    });
+    // Bind preview buttons
+    grid.querySelectorAll('.previewBtn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const id = btn.getAttribute('data-id');
+        const item = contents.find(x=>String(x.id)===String(id));
+        if(item) openPreview(item);
+      });
     });
 
     // Stats
@@ -498,6 +539,45 @@
     sel.innerHTML = '<option value="all">All Categories</option>' + categories.map(c=>`<option value="${c}">${c}</option>`).join('');
     sel.value = current;
   }
+
+  // ===== Preview Modal JS =====
+  const previewModal     = document.getElementById('previewModal');
+  const previewClose     = document.getElementById('previewClose');
+  const previewDismiss   = document.getElementById('previewDismiss');
+  const modalTitle       = document.getElementById('modalTitle');
+  const modalBody        = document.getElementById('modalBody');
+  const modalAttachments = document.getElementById('modalAttachments');
+  const modalCopy        = document.getElementById('modalCopy');
+  let modalCurrentItem   = null;
+  function openPreview(item){
+    modalCurrentItem = item;
+    modalTitle.textContent = item.title || '—';
+    const waText = item.formattedContent || (item.content || '');
+    modalBody.innerHTML = whatsappPreviewHTML(waText) || '(no content)';
+    modalAttachments.innerHTML = (item.attachments||[])
+      .map(a => `<a href="${escapeHtml(a.url)}" target="_blank" class="text-xs underline px-2 py-1 rounded border border-border-light dark:border-border-dark">${escapeHtml(a.name)}</a>`)
+      .join('');
+    previewModal.classList.remove('hidden');
+    previewModal.classList.add('flex');
+  }
+  function closePreview(){
+    previewModal.classList.add('hidden');
+    previewModal.classList.remove('flex');
+    modalCurrentItem = null;
+  }
+  previewClose.addEventListener('click', closePreview);
+  previewDismiss.addEventListener('click', closePreview);
+  previewModal.addEventListener('click', (e)=>{ if(e.target===previewModal) closePreview(); });
+  document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closePreview(); });
+  modalCopy.addEventListener('click', async ()=>{
+    if(!modalCurrentItem) return;
+    try {
+      await navigator.clipboard.writeText(modalCurrentItem.formattedContent || modalCurrentItem.content || '');
+      alert('Copied to clipboard!');
+    } catch {
+      alert('Copy failed.');
+    }
+  });
 
   // Boot
   window.addEventListener('DOMContentLoaded', ()=>{ renderCategories(); syncContents(); updateSaveEnabled(); });
