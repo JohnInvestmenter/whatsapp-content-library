@@ -37,6 +37,8 @@
     .scrollbar-thin{scrollbar-width:thin}
     .scrollbar-thin::-webkit-scrollbar{height:6px;width:6px}
     .scrollbar-thin::-webkit-scrollbar-thumb{background:rgba(0,0,0,.25);border-radius:9999px}
+    /* pressed look for sticky buttons */
+    .wa-btn[aria-pressed="true"]{ background:rgba(244,199,83,.18) }
   </style>
 </head>
 <body class="bg-background-light dark:bg-background-dark font-display text-content-light dark:text-content-dark">
@@ -117,21 +119,25 @@
               <label for="content" class="text-sm font-medium">Content</label>
 
               <div class="mt-2 flex gap-1">
-                <button type="button" class="wa-btn px-3 py-2 rounded-lg border border-border-light dark:border-border-dark hover:bg-primary/10 dark:hover:bg-primary/20 text-sm font-bold"
-                        data-wrap-before="**" data-wrap-after="**" title="Bold (Ctrl/⌘+B)">
-                  <span class="material-symbols-outlined text-base align-middle">format_bold</span>
+                <button type="button"
+                        class="wa-btn px-3 py-2 rounded-lg border border-border-light dark:border-border-dark hover:bg-primary/10 dark:hover:bg-primary/20 text-sm font-bold"
+                        data-format="bold" data-open="**" data-close="**" aria-pressed="false" title="Bold (Ctrl/⌘+B)">
+                  <span class="font-black">B</span>
                 </button>
-                <button type="button" class="wa-btn px-3 py-2 rounded-lg border border-border-light dark:border-border-dark hover:bg-primary/10 dark:hover:bg-primary/20 text-sm font-bold"
-                        data-wrap-before="__" data-wrap-after="__" title="Italic (Ctrl/⌘+I)">
-                  <span class="material-symbols-outlined text-base align-middle">format_italic</span>
+                <button type="button"
+                        class="wa-btn px-3 py-2 rounded-lg border border-border-light dark:border-border-dark hover:bg-primary/10 dark:hover:bg-primary/20 text-sm font-bold italic"
+                        data-format="italic" data-open="__" data-close="__" aria-pressed="false" title="Italic (Ctrl/⌘+I)">
+                  <span>I</span>
                 </button>
-                <button type="button" class="wa-btn px-3 py-2 rounded-lg border border-border-light dark:border-border-dark hover:bg-primary/10 dark:hover:bg-primary/20 text-sm font-bold"
-                        data-wrap-before="~~" data-wrap-after="~~" title="Strikethrough (Ctrl/⌘+Shift+X)">
-                  <span class="material-symbols-outlined text-base align-middle">strikethrough_s</span>
+                <button type="button"
+                        class="wa-btn px-3 py-2 rounded-lg border border-border-light dark:border-border-dark hover:bg-primary/10 dark:hover:bg-primary/20 text-sm font-bold line-through"
+                        data-format="strike" data-open="~~" data-close="~~" aria-pressed="false" title="Strikethrough (Ctrl/⌘+Shift+X)">
+                  <span>S</span>
                 </button>
-                <button type="button" class="wa-btn px-3 py-2 rounded-lg border border-border-light dark:border-border-dark hover:bg-primary/10 dark:hover:bg-primary/20 text-sm font-bold"
-                        data-wrap-before="`" data-wrap-after="`" title="Inline code (Ctrl/⌘+`)">
-                  <span class="material-symbols-outlined text-base align-middle">code</span>
+                <button type="button"
+                        class="wa-btn px-3 py-2 rounded-lg border border-border-light dark:border-border-dark hover:bg-primary/10 dark:hover:bg-primary/20 text-sm font-bold"
+                        data-format="code" data-open="`" data-close="`" aria-pressed="false" title="Inline code (Ctrl/⌘+`)">
+                  <span>&lt;&gt;</span>
                 </button>
               </div>
 
@@ -265,12 +271,12 @@
   const messageBar = $('#messageBar');
   const escapeHtml = (s='') => s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
 
-  // WhatsApp marker conversions (markdown-ish → WA & preview)
+  // WhatsApp marker conversions
   const toWhatsApp = (text='') => text
     .replace(/\*\*(.*?)\*\*/g,'*$1*')
     .replace(/__(.*?)__/g,'_$1_')
     .replace(/~~(.*?)~~/g,'~$1~')
-    .replace(/`(.*?)`/g,'$1'); // inline code becomes plain for final copy
+    .replace(/`(.*?)`/g,'$1');
 
   function whatsappPreviewHTML(text=''){
     const safe = escapeHtml(text);
@@ -328,7 +334,7 @@
       renderCategories();
       render();
       if(!items.length){
-        toast('ok', 'No content returned from API. If you expected items, check the API URL or CORS. You can pass ?api=YOUR_ENDPOINT to this page to override.');
+        toast('ok', 'No content returned from API. You can pass ?api=YOUR_ENDPOINT to override.');
       }
     }catch(e){
       console.error('[sync] failed', e);
@@ -384,7 +390,6 @@
       const waHTML = whatsappPreviewHTML(waText);
       const used = Number(c.useCount||0);
 
-      // find a thumbnail
       let img = null;
       if (Array.isArray(c.attachments)) {
         img = c.attachments.find(a => /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test((a.name||'') + (a.url||'')));
@@ -445,7 +450,6 @@
         </div>`;
     }).join('');
 
-    // actions
     grid.querySelectorAll('.copyBtn').forEach(btn=>{
       btn.addEventListener('click', ()=> copyToClipboard(btn.getAttribute('data-id')));
     });
@@ -562,33 +566,70 @@
   title.addEventListener('input', ()=>{ previewTitle.textContent = title.value||'—'; updateSaveEnabled(); });
   content.addEventListener('input', ()=>{ const waText = toWhatsApp(content.value||''); waPreview.innerHTML = whatsappPreviewHTML(waText) || '(start typing…)'; updateSaveEnabled(); });
 
-  // ===== Toolbar logic =====
-  function wrapSelection(textarea, before, after){
+  // ===== Sticky toolbar (Word-like) =====
+  const activeFormats = new Map(); // format -> {open, close}
+  function insertAtCursor(textarea, text){
     const start = textarea.selectionStart ?? 0;
     const end   = textarea.selectionEnd   ?? 0;
-    const value = textarea.value;
-    const selected = start === end ? 'text' : value.slice(start, end);
-    const wrapped = before + selected + after;
-    textarea.value = value.slice(0, start) + wrapped + value.slice(end);
-    const newStart = start + before.length;
-    const newEnd   = newStart + selected.length;
+    const v     = textarea.value;
+    textarea.value = v.slice(0, start) + text + v.slice(end);
+    const pos = start + text.length;
+    textarea.focus();
+    textarea.setSelectionRange(pos, pos);
+  }
+  function wrapSelection(textarea, open, close){
+    const start = textarea.selectionStart ?? 0;
+    const end   = textarea.selectionEnd   ?? 0;
+    const v     = textarea.value;
+    const sel   = v.slice(start, end) || 'text';
+    const wrapped = open + sel + close;
+    textarea.value = v.slice(0, start) + wrapped + v.slice(end);
+    const newStart = start + open.length;
+    const newEnd   = newStart + sel.length;
     textarea.focus();
     textarea.setSelectionRange(newStart, newEnd);
     content.dispatchEvent(new Event('input', { bubbles: true }));
   }
-  function initWAToolbar(){
+  function toggleSticky(format, open, close){
+    const btn = document.querySelector(`.wa-btn[data-format="${format}"]`);
+    const isOn = activeFormats.has(format);
+    const hasSelection = content.selectionStart !== content.selectionEnd;
+
+    if(!isOn){
+      if(hasSelection){ wrapSelection(content, open, close); }
+      insertAtCursor(content, open);               // start sticky
+      activeFormats.set(format, {open, close});
+      btn?.setAttribute('aria-pressed','true');
+    }else{
+      insertAtCursor(content, close);              // end sticky
+      activeFormats.delete(format);
+      btn?.setAttribute('aria-pressed','false');
+    }
+    content.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  function closeAllFormats(){
+    if(activeFormats.size === 0) return;
+    const closers = Array.from(activeFormats.values()).reverse().map(x=>x.close).join('');
+    insertAtCursor(content, closers);
+    document.querySelectorAll('.wa-btn[aria-pressed="true"]').forEach(b=>b.setAttribute('aria-pressed','false'));
+    activeFormats.clear();
+    content.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  function initStickyToolbar(){
     document.querySelectorAll('.wa-btn').forEach(btn=>{
       btn.addEventListener('click', ()=>{
-        wrapSelection(content, btn.getAttribute('data-wrap-before')||'', btn.getAttribute('data-wrap-after')||'');
+        toggleSticky(btn.dataset.format, btn.dataset.open, btn.dataset.close);
       });
     });
     content.addEventListener('keydown', (e)=>{
       const meta = e.ctrlKey || e.metaKey;
-      if(meta && !e.shiftKey && e.key.toLowerCase()==='b'){ e.preventDefault(); wrapSelection(content,'**','**'); }
-      if(meta && !e.shiftKey && e.key.toLowerCase()==='i'){ e.preventDefault(); wrapSelection(content,'__','__'); }
-      if(meta && e.shiftKey && e.key.toLowerCase()==='x'){ e.preventDefault(); wrapSelection(content,'~~','~~'); }
-      if(meta && e.key==='`'){ e.preventDefault(); wrapSelection(content,'`','`'); }
+      if(meta && !e.shiftKey && e.key.toLowerCase()==='b'){ e.preventDefault(); toggleSticky('bold', '**','**'); }
+      if(meta && !e.shiftKey && e.key.toLowerCase()==='i'){ e.preventDefault(); toggleSticky('italic','__','__'); }
+      if(meta && e.shiftKey && e.key.toLowerCase()==='x'){ e.preventDefault(); toggleSticky('strike','~~','~~'); }
+      if(meta && e.key==='`'){ e.preventDefault(); toggleSticky('code','`','`'); }
     });
+    content.addEventListener('blur', closeAllFormats);
+    document.getElementById('addForm')?.addEventListener('submit', closeAllFormats);
   }
 
   // Filters
@@ -648,7 +689,7 @@
   });
 
   // Boot
-  window.addEventListener('DOMContentLoaded', ()=>{ renderCategories(); initWAToolbar(); syncContents(); updateSaveEnabled(); });
+  window.addEventListener('DOMContentLoaded', ()=>{ renderCategories(); initStickyToolbar(); syncContents(); updateSaveEnabled(); });
 </script>
 </body>
 </html>
