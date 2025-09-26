@@ -150,7 +150,15 @@
           <p class="text-sm text-subtle-light dark:text-subtle-dark">Live preview of how your content will appear.</p>
           <div class="bg-gray-200 dark:bg-gray-800 p-4 rounded-lg">
             <div class="flex items-start gap-2.5">
-              <span class="relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full"><img alt="User Avatar" class="aspect-square h-full w-full" src="https://lh3.googleusercontent.com/a/ACg8ocK_3tA3yV-5c-Q1J5YgX_o_E_4z-e-yH2gY_e-Z6U=s96-c"/></span>
+              <span class="relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full">
+                <img
+                  alt="User Avatar"
+                  class="aspect-square h-full w-full"
+                  referrerpolicy="no-referrer"
+                  src="https://lh3.googleusercontent.com/a/ACg8ocK_3tA3yV-5c-Q1J5YgX_o_E_4z-e-yH2gY_e-Z6U=s96-c"
+                  onerror="this.onerror=null;this.src='https://api.dicebear.com/7.x/initials/svg?seed=CH';"
+                />
+              </span>
               <div class="grid gap-1 w-full">
                 <div id="previewTitle" class="font-semibold text-gray-900 dark:text-gray-50">—</div>
                 <div id="waPreview" class="text-sm leading-snug text-gray-700 dark:text-gray-300 whitespace-pre-wrap max-h-48 overflow-auto scrollbar-thin">(start typing…)</div>
@@ -162,6 +170,7 @@
     </div>
   </main>
 
+  <!-- Preview Modal -->
   <div id="previewModal" class="fixed inset-0 hidden items-center justify-center bg-black/60 z-50 p-4">
     <div class="w-full max-w-2xl bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg shadow-xl">
       <div class="flex items-center justify-between p-4 border-b border-border-light dark:border-border-dark">
@@ -172,7 +181,16 @@
         <p class="text-sm text-subtle-light dark:text-subtle-dark mb-3">Live preview of how this content will appear.</p>
         <div class="bg-gray-200 dark:bg-gray-800 p-4 rounded-lg">
           <div class="flex items-start gap-2.5">
-            <span class="relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full"><img id="modalAvatar" class="aspect-square h-full w-full" alt="Avatar" src="https://lh3.googleusercontent.com/a/ACg8ocK_3tA3yV-5c-Q1J5YgX_o_E_4z-e-yH2gY_e-Z6U=s96-c"/></span>
+            <span class="relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full">
+              <img
+                id="modalAvatar"
+                class="aspect-square h-full w-full"
+                alt="Avatar"
+                referrerpolicy="no-referrer"
+                src="https://lh3.googleusercontent.com/a/ACg8ocK_3tA3yV-5c-Q1J5YgX_o_E_4z-e-yH2gY_e-Z6U=s96-c"
+                onerror="this.onerror=null;this.src='https://api.dicebear.com/7.x/initials/svg?seed=CH';"
+              />
+            </span>
             <div class="grid gap-1 w-full">
               <div id="modalTitle" class="font-semibold text-gray-900 dark:text-gray-50">—</div>
               <div id="modalBody" class="text-sm leading-snug text-gray-700 dark:text-gray-300 whitespace-pre-wrap max-h-72 overflow-auto scrollbar-thin">(content)</div>
@@ -192,7 +210,6 @@
 <script>
   // ===== CONFIG =====
   const DEFAULT_API = 'https://whatsapp-content-library.vercel.app/api/contents';
-  // Allow override via ?api=... for quick testing
   const urlParams = new URLSearchParams(location.search);
   const API = urlParams.get('api') || DEFAULT_API;
 
@@ -214,19 +231,23 @@
   const $ = (sel)=>document.querySelector(sel);
   const messageBar = $('#messageBar');
   const escapeHtml = (s='') => s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+
+  // WhatsApp markers
   const toWhatsApp = (text='') => text
     .replace(/\*\*(.*?)\*\*/g,'*$1*')
     .replace(/__(.*?)__/g,'_$1_')
     .replace(/~~(.*?)~~/g,'~$1~')
-    .replace(/`(.*?)`/g,'```$1```');
+    .replace(/`(.*?)`/g,'$1'); // inline code becomes plain
+
   function whatsappPreviewHTML(text=''){
     const safe = escapeHtml(text);
     return safe
-      .replace(/\*(.*?)\*/g,'<strong>$1<\/strong>')
-      .replace(/_(.*?)_/g,'<em>$1<\/em>')
-      .replace(/~(.*?)~/g,'<s>$1<\/s>')
-      .replace(/```([^`]+)```/g,'<code>$1<\/code>');
+      .replace(/\*(.*?)\*/g,'<strong>$1</strong>')
+      .replace(/_(.*?)_/g,'<em>$1</em>')
+      .replace(/~(.*?)~/g,'<s>$1</s>')
+      .replace(/`([^`]+)`/g,'<code>$1</code>');
   }
+
   function fileToBase64(file){
     return new Promise((resolve, reject)=>{
       const fr = new FileReader();
@@ -269,7 +290,6 @@
     $('#syncBtn')?.classList.add('opacity-70','pointer-events-none');
     try{
       const data = await fetchJSON(API);
-      // Be forgiving about the response shape: array or {items:[]}
       const items = Array.isArray(data) ? data : (Array.isArray(data.items) ? data.items : (Array.isArray(data.data) ? data.data : []));
       contents = items;
       renderCategories();
@@ -330,13 +350,20 @@
       const waText = c.formattedContent || toWhatsApp(c.content||'');
       const waHTML = whatsappPreviewHTML(waText);
       const used = Number(c.useCount||0);
-      const img = (c.attachments||[]).find(a=>/\.(png|jpe?g|gif|webp)$/i.test(a.name||a.url||''));
+
+      // Find a thumbnail image from attachments
+      let img = null;
+      if (Array.isArray(c.attachments)) {
+        img = c.attachments.find(a => /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test((a.name||'') + (a.url||'')));
+      }
+
       return `
         <div class="h-full">
-          <div class="border border-border-light dark:border-border-dark rounded-lg p-4 flex flex-col h-full bg-background-light dark:bg-background-dark">
+          <!-- Fixed uniform card height -->
+          <div class="border border-border-light dark:border-border-dark rounded-lg p-4 flex flex-col h-[420px] bg-background-light dark:bg-background-dark">
             <div class="flex items-start justify-between gap-3">
               <div class="flex-1">
-                <h3 class="font-semibold text-sm leading-tight">${escapeHtml(c.title||'')}</h3>
+                <h3 class="font-semibold text-sm leading-tight line-clamp-3">${escapeHtml(c.title||'')}</h3>
                 <div class="mt-1 flex items-center gap-2 text-xs text-subtle-light dark:text-subtle-dark">
                   <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/20 font-bold">${escapeHtml(c.category||'')}</span>
                   <span>Used ${used} times</span>
@@ -354,13 +381,22 @@
 
             ${(c.attachments&&c.attachments.length)?`
               <div class="flex flex-wrap gap-2 mt-2">
-                ${c.attachments.map(a=>`<a href="${escapeHtml(a.url)}" target="_blank" class="text-xs underline px-2 py-1 rounded border border-border-light dark:border-border-dark">${escapeHtml(a.name)}</a>`).join('')}
+                ${c.attachments.map(a=>`<a href="${escapeHtml(a.url)}" target="_blank" class="text-xs underline px-2 py-1 rounded border border-border-light dark:border-border-dark">${escapeHtml(a.name || (a.url||'').split('/').pop())}</a>`).join('')}
               </div>
             `:''}
 
+            <!-- Preview area fills the remaining space (same size on all cards) -->
             <div class="mt-3 flex-1 min-h-0 rounded-lg border border-border-light dark:border-border-dark overflow-hidden">
               <div class="h-full overflow-auto p-3 text-sm scrollbar-thin bg-background-light dark:bg-background-dark">
-                ${img?`<img src="${escapeHtml(img.url)}" alt="thumb" class="w-full rounded mb-3">`:''}
+                ${img ? `
+                  <img
+                    src="${escapeHtml(img.url)}"
+                    alt="attachment"
+                    class="w-full rounded mb-3"
+                    referrerpolicy="no-referrer"
+                    loading="lazy"
+                    onerror="this.style.display='none';"
+                  />` : '' }
                 <div class="whitespace-pre-wrap">${waHTML}</div>
               </div>
             </div>
@@ -442,7 +478,7 @@
     attachmentsList.innerHTML = newAttachments.map((a,idx)=>`
       <div class="inline-flex items-center gap-2 border border-border-light dark:border-border-dark rounded px-2 py-1">
         <span class="material-symbols-outlined text-base">description</span>
-        <a href="${escapeHtml(a.url)}" target="_blank" class="text-sm underline">${escapeHtml(a.name)}</a>
+        <a href="${escapeHtml(a.url)}" target="_blank" class="text-sm underline">${escapeHtml(a.name || (a.url||'').split('/').pop())}</a>
         <button type="button" class="removeAtt px-1 text-subtle-light dark:text-subtle-dark hover:text-red-500" data-idx="${idx}" ${isUploading?'disabled':''}>
           <span class="material-symbols-outlined text-base leading-none">close</span>
         </button>
@@ -534,7 +570,7 @@
     const waText = item.formattedContent || (item.content || '');
     modalBody.innerHTML = whatsappPreviewHTML(waText) || '(no content)';
     modalAttachments.innerHTML = (item.attachments||[])
-      .map(a => `<a href="${escapeHtml(a.url)}" target="_blank" class="text-xs underline px-2 py-1 rounded border border-border-light dark:border-border-dark">${escapeHtml(a.name)}</a>`)
+      .map(a => `<a href="${escapeHtml(a.url)}" target="_blank" class="text-xs underline px-2 py-1 rounded border border-border-light dark:border-border-dark">${escapeHtml(a.name || (a.url||'').split('/').pop())}</a>`)
       .join('');
     previewModal.classList.remove('hidden');
     previewModal.classList.add('flex');
