@@ -120,7 +120,12 @@
             </div>
 
             <div>
-              <label for="content" class="text-sm font-medium">Content</label>
+              <div class="flex items-center justify-between">
+                <label for="content" class="text-sm font-medium">Content</label>
+                <button id="aiWriteBtn" type="button" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-border-light dark:border-border-dark text-sm font-bold hover:bg-primary/10 dark:hover:bg-primary/20">
+                  <span class="material-symbols-outlined text-base">spark</span> AI Write
+                </button>
+              </div>
               <textarea id="content"
                 class="mt-2 block w-full px-3 py-2 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg focus:outline-none focus:ring-primary focus:border-primary sm:text-sm placeholder-subtle-light dark:placeholder-subtle-dark"
                 placeholder="Use **bold**, __italic__, ~~strike~~ and `code`."
@@ -221,6 +226,44 @@
       <div class="p-4 border-t border-border-light dark:border-border-dark flex justify-end gap-2">
         <button id="modalCopy" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border-light dark:border-border-dark hover:bg-primary/10 dark:hover:bg-primary/20 text-sm font-bold"><span class="material-symbols-outlined text-base">content_copy</span> Copy</button>
         <button id="previewDismiss" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white hover:opacity-90 text-sm font-bold">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI Write Modal -->
+  <div id="aiModal" class="fixed inset-0 hidden items-center justify-center bg-black/60 z-[60] p-4">
+    <div class="w-full max-w-2xl bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg shadow-xl">
+      <div class="flex items-center justify-between p-4 border-b border-border-light dark:border-border-dark">
+        <h3 class="text-lg font-bold">AI Write</h3>
+        <button id="aiClose" class="p-2 rounded-lg hover:bg-primary/10"><span class="material-symbols-outlined">close</span></button>
+      </div>
+      <div class="p-6 space-y-4">
+        <label class="text-sm font-medium">Prompt</label>
+        <textarea id="aiPrompt" rows="4" class="w-full px-3 py-2 rounded-lg bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark" placeholder="e.g., Write a WhatsApp post highlighting Dubai Golden Visa benefits for entrepreneurs."></textarea>
+
+        <details class="rounded-lg border border-border-light dark:border-border-dark p-3">
+          <summary class="cursor-pointer text-sm font-bold">Options (optional)</summary>
+          <div class="mt-3 grid sm:grid-cols-2 gap-3">
+            <label class="flex items-center gap-2 text-sm">
+              <input id="aiUseApi" type="checkbox" class="rounded border-border-light dark:border-border-dark">
+              Use external API (OpenAI-compatible)
+            </label>
+            <input id="aiApiKey" type="password" class="px-3 py-2 rounded-lg bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark" placeholder="API key (kept in memory only)" />
+            <input id="aiModel" class="px-3 py-2 rounded-lg bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark" placeholder="Model (e.g., gpt-4o-mini)" />
+            <input id="aiMaxTokens" class="px-3 py-2 rounded-lg bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark" placeholder="Max tokens (e.g., 300)" />
+          </div>
+          <p class="text-xs text-subtle-light dark:text-subtle-dark mt-2">If unchecked, a fast local generator learns your style from current library items.</p>
+        </details>
+
+        <div id="aiPreview" class="hidden rounded-lg border border-dashed border-border-light dark:border-border-dark p-3 text-sm whitespace-pre-wrap"></div>
+      </div>
+      <div class="p-4 border-t border-border-light dark:border-border-dark flex justify-end gap-2">
+        <button id="aiGenerate" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white hover:opacity-90 text-sm font-bold">
+          <span class="material-symbols-outlined text-base">spark</span> Generate
+        </button>
+        <button id="aiUse" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border-light dark:border-border-dark hover:bg-primary/10 dark:hover:bg-primary/20 text-sm font-bold" disabled>
+          Use in Content
+        </button>
       </div>
     </div>
   </div>
@@ -377,7 +420,6 @@
 
       return `
         <div class="h-full">
-          <!-- Fixed uniform height; preview flexes -->
           <div class="border border-border-light dark:border-border-dark rounded-lg p-4 flex flex-col h-[420px] bg-background-light dark:bg-background-dark">
             <div class="flex items-start justify-between gap-3">
               <div class="flex-1">
@@ -600,6 +642,148 @@
   modalCopy.addEventListener('click', async ()=>{
     if(!modalCurrentItem) return;
     try{ await navigator.clipboard.writeText(modalCurrentItem.formattedContent || modalCurrentItem.content || ''); toast('ok','Copied to clipboard'); closePreview(); }catch(e){ toast('error','Copy failed'); }
+  });
+
+  // ===== AI WRITE =====
+  const aiModal   = document.getElementById('aiModal');
+  const aiWriteBtn= document.getElementById('aiWriteBtn');
+  const aiClose   = document.getElementById('aiClose');
+  const aiPrompt  = document.getElementById('aiPrompt');
+  const aiGenerate= document.getElementById('aiGenerate');
+  const aiUseBtn  = document.getElementById('aiUse');
+  const aiPreview = document.getElementById('aiPreview');
+  const aiUseApi  = document.getElementById('aiUseApi');
+  const aiApiKey  = document.getElementById('aiApiKey');
+  const aiModel   = document.getElementById('aiModel');
+  const aiMaxTokens = document.getElementById('aiMaxTokens');
+
+  function openAi(){ aiPreview.classList.add('hidden'); aiPreview.textContent=''; aiUseBtn.disabled=true; aiModal.classList.remove('hidden'); aiModal.classList.add('flex'); aiPrompt.focus(); }
+  function closeAi(){ aiModal.classList.add('hidden'); aiModal.classList.remove('flex'); }
+  aiWriteBtn.addEventListener('click', openAi);
+  aiClose.addEventListener('click', closeAi);
+  aiModal.addEventListener('click', e=>{ if(e.target===aiModal) closeAi(); });
+  document.addEventListener('keydown', e=>{ if(!aiModal.classList.contains('hidden') && e.key==='Escape') closeAi(); });
+
+  function pickTop(arr, n=5){
+    const map=new Map(); arr.forEach(x=>{ if(!x) return; map.set(x,(map.get(x)||0)+1); });
+    return [...map.entries()].sort((a,b)=>b[1]-a[1]).slice(0,n).map(x=>x[0]);
+  }
+  function extractEmojis(text=''){
+    return (text.match(/[\p{Emoji}\uFE0F\u200D]/gu)||[]).filter(ch=>/\p{Emoji}/u.test(ch));
+  }
+
+  function learnStyle(items){
+    const allTags = [];
+    const allEmojis = [];
+    const lineLens = [];
+    const ctas = [];
+    for(const it of items||[]){
+      (it.tags||[]).forEach(t=>allTags.push('#'+String(t).trim()));
+      const txt = (it.content||'') + ' ' + (it.formattedContent||'');
+      extractEmojis(txt).forEach(e=>allEmojis.push(e));
+      (txt.split(/\n+/).filter(Boolean)||[]).forEach(l=>lineLens.push(Math.min(l.length, 240)));
+      const m = txt.match(/(contact us|dm us|message us|tap the link|book now|apply now|learn more|get started)/i);
+      if(m) ctas.push(m[0].toLowerCase());
+    }
+    const topTags   = pickTop(allTags,8);
+    const topEmojis = pickTop(allEmojis,6);
+    const avgLine   = Math.round((lineLens.reduce((a,b)=>a+b,0)/(lineLens.length||1))||120);
+    const topCtas   = pickTop(ctas,5);
+    return { topTags, topEmojis, avgLine, topCtas };
+  }
+
+  function localGenerate(prompt, style){
+    const { topTags=[], topEmojis=[], avgLine=120, topCtas=[] } = style||{};
+    const e = (topEmojis[0]||'✨') + ' ';
+    const e2 = topEmojis[1]||'✅';
+    const e3 = topEmojis[2]||'📌';
+    const cta = (topCtas[0]||'Get started today');
+    const tagset = (topTags.slice(0,3).join(' ') || '#InvestMenter #Dubai');
+
+    // Simple shaping into 4–6 short lines
+    const subject = prompt.replace(/\s+/g,' ').trim();
+    const lines = [
+      `*${subject.charAt(0).toUpperCase()+subject.slice(1)}*`,
+      `${e2} _Why it matters:_`,
+      `• Fast-track benefits and long-term security`,
+      `• Designed for investors & entrepreneurs`,
+      `• Guidance from our experts`,
+      `${e3} ${cta} — message us to begin.`,
+      ``,
+      tagset
+    ];
+
+    // Soft wrap to avgLine
+    const wrap = (s, limit)=> s.length<=limit ? s :
+      s.replace(new RegExp(`(.{1,${limit}})(\\s|$)`,'g'), '$1\n').trim();
+
+    return e + lines.map(l=>wrap(l, Math.max(80, Math.min(160, avgLine)))).join('\n');
+  }
+
+  async function callApiGenerate(prompt, style){
+    // Very simple OpenAI-compatible call; user supplies key & model (optional)
+    const key = aiApiKey.value.trim();
+    const model = (aiModel.value||'gpt-4o-mini').trim();
+    const maxTokens = Number(aiMaxTokens.value||300);
+    if(!key) throw new Error('API key required (or turn off "Use external API").');
+
+    // Few-shot: feed 2 short samples from your library to bias the style
+    const samples = (contents||[]).slice(0,2).map(c=> (c.formattedContent||c.content||'')).join('\n---\n').slice(0,1500);
+    const sys = `You write concise WhatsApp messages using *bold*, _italic_, ~strike~ and minimal emojis. Follow the voice of these examples:\n${samples}\n---\nReturn ONLY the message body.`;
+    const body = {
+      model,
+      messages: [
+        {role:'system', content: sys},
+        {role:'user', content: prompt}
+      ],
+      temperature: 0.7,
+      max_tokens: maxTokens
+    };
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':`Bearer ${key}`},
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error?.message || ('HTTP '+res.status));
+    return (data.choices?.[0]?.message?.content || '').trim();
+  }
+
+  aiGenerate.addEventListener('click', async ()=>{
+    const prompt = (aiPrompt.value||'').trim();
+    if(!prompt){ aiPrompt.focus(); return; }
+    aiGenerate.disabled = true;
+    aiGenerate.innerHTML = '<span class="material-symbols-outlined animate-spin">progress_activity</span> Generating…';
+    aiPreview.classList.remove('hidden');
+    aiPreview.textContent = '';
+
+    try{
+      let out = '';
+      if(aiUseApi.checked){
+        out = await callApiGenerate(prompt, learnStyle(contents));
+      }else{
+        const style = learnStyle(contents);
+        out = localGenerate(prompt, style);
+      }
+      aiPreview.textContent = out || '(no output)';
+      aiUseBtn.disabled = !out;
+    }catch(err){
+      aiPreview.textContent = 'Generation failed: ' + err.message;
+      aiUseBtn.disabled = true;
+    }finally{
+      aiGenerate.disabled = false;
+      aiGenerate.innerHTML = '<span class="material-symbols-outlined text-base">spark</span> Generate';
+    }
+  });
+
+  aiUseBtn.addEventListener('click', ()=>{
+    const text = aiPreview.textContent || '';
+    if(!text) return;
+    content.value = text;
+    const waText = toWhatsApp(text);
+    waPreview.innerHTML = whatsappPreviewHTML(waText);
+    updateSaveEnabled();
+    closeAi();
   });
 
   // Boot
