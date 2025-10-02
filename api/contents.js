@@ -1,137 +1,625 @@
-// /api/contents.js
-import { Client } from "@notionhq/client";
-
-export default async function handler(req, res) {
-  // ---- Safe debug flag (never exposes secrets) ----
-  const debug = String(req.query?.debug || "").toLowerCase() === "1";
-
-  try {
-    // ---- Check env vars ----
-    const NOTION_API_KEY = process.env.NOTION_API_KEY;
-    const NOTION_DATABASE_ID = process.env.NOTION_DATABASE_ID;
-
-    if (!NOTION_API_KEY || !NOTION_DATABASE_ID) {
-      return res.status(500).json({
-        error: "Missing env vars",
-        hint:
-          "Set NOTION_API_KEY and NOTION_DATABASE_ID in Vercel → Project → Settings → Environment Variables, then redeploy.",
-        debug: debug
-          ? {
-              has_API_KEY: !!NOTION_API_KEY,
-              has_DATABASE_ID: !!NOTION_DATABASE_ID
-            }
-          : undefined
-      });
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>WhatsApp Content Library</title>
+  <link rel="icon" href="data:,"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    /* ---------- THEMES (light/dark) ---------- */
+    :root{
+      --ink:#0b0b0c; --fg:#0b0b0c; --muted:#f4f5f7; --muted-ink:#6b7280;
+      --brand:#d6b160; --brand-ink:#000; --chip:#0f766e; --chip-ink:#ecfeff;
+      --card:#ffffff; --border:rgba(0,0,0,.08); --bg:#ffffff;
+      --wa:#e7f1e9; --wa-ink:#0b0b0c;
     }
-
-    // ---- Notion client ----
-    const notion = new Client({ auth: NOTION_API_KEY });
-
-    if (req.method === "GET") {
-      // Optional: if your DB has no "Created" property, drop the sorts array
-      let query = { database_id: NOTION_DATABASE_ID };
-      try {
-        query.sorts = [{ property: "Created", direction: "descending" }];
-      } catch (_) {}
-
-      const pages = await notion.databases.query(query);
-
-      const items = pages.results.map((p) => {
-        const props = p.properties || {};
-        const attachments = (props.Attachments?.files || []).map((f) => {
-          const url = f?.external?.url || f?.file?.url || "";
-          return { name: f.name || "file", url };
-        });
-
-        return {
-          id: p.id,
-          title: props.Title?.title?.[0]?.plain_text || "",
-          content: props.Content?.rich_text?.[0]?.plain_text || "",
-          formattedContent: props.Formatted?.rich_text?.[0]?.plain_text || "",
-          category: props.Category?.select?.name || "General",
-          tags: (props.Tags?.multi_select || []).map((t) => t.name),
-          dateCreated: props.Created?.date?.start || "",
-          lastUsed: props.LastUsed?.date?.start || "",
-          useCount: Number(props.UseCount?.number ?? 0),
-          attachments
-        };
-      });
-
-      return res.status(200).json({ items });
+    [data-theme="dark"]{
+      --ink:#e5e7eb; --fg:#e5e7eb; --muted:#16181b; --muted-ink:#9ca3af;
+      --brand:#d6b160; --brand-ink:#000; --chip:#0d9488; --chip-ink:#ecfeff;
+      --card:#0f1114; --border:rgba(255,255,255,.10); --bg:#0b0b0c;
+      --wa:#0f1a13; --wa-ink:#e5e7eb;
     }
+    body{ background:var(--bg); color:var(--fg); }
+    .card{ background:var(--card); border:1px solid var(--border); }
+    .chip{ border-radius:9999px; padding:2px 8px; font-size:12px }
+    .btn{ display:inline-flex; align-items:center; gap:.5rem; border:1px solid var(--border); padding:.55rem .8rem; border-radius:.75rem; }
+    .btn:hover:not([disabled]){ background:rgba(255,255,255,.06) }
+    [data-theme="light"] .btn:hover:not([disabled]){ background:rgba(0,0,0,.04) }
+    .btn-brand{ background:var(--brand); color:var(--brand-ink); border-color:transparent; }
+    .btn-brand:hover:not([disabled]){ filter:brightness(.95) }
+    .btn[disabled]{ opacity:.6; cursor:not-allowed; }
+    .shadow-soft{ box-shadow:0 8px 30px rgba(0,0,0,.12) }
+    [data-theme="dark"] .shadow-soft{ box-shadow:0 8px 30px rgba(0,0,0,.35) }
+    .scrollbar-thin{ scrollbar-width: thin; }
+    .scrollbar-thin::-webkit-scrollbar{ height:6px; width:6px;}
+    .scrollbar-thin::-webkit-scrollbar-thumb{ background:rgba(127,127,127,.35); border-radius:999px;}
+    .wa-bubble { background:var(--wa); color:var(--wa-ink); border:1px solid var(--border); border-radius:12px; padding:12px; }
+    .wa-bubble strong{ font-weight:700; }
+    .wa-bubble em{ font-style:italic; }
+    .wa-bubble s{ text-decoration:line-through; }
+    .wa-bubble code{
+      background:transparent; border:1px solid var(--border); border-radius:6px; padding:1px 4px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size:.875em;
+    }
+  </style>
+</head>
+<body class="min-h-screen p-6">
+  <div class="max-w-6xl mx-auto space-y-6">
+    <!-- Header -->
+    <header class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <h1 class="text-3xl font-bold flex items-center gap-2 tracking-tight">
+        <i data-lucide="message-circle"></i> WhatsApp Content Library
+      </h1>
+      <div class="flex gap-2">
+        <button id="themeBtn" class="btn" title="Toggle dark mode"><i data-lucide="moon"></i><span class="hidden md:inline">Dark</span></button>
+        <button id="syncBtn" class="btn"><i data-lucide="refresh-cw"></i> <span class="hidden md:inline">Sync Now</span></button>
+        <button id="addBtn" class="btn btn-brand"><i data-lucide="plus"></i> <span class="hidden md:inline">Add Content</span></button>
+      </div>
+    </header>
 
-    if (req.method === "POST") {
-      let body = req.body;
-      if (typeof body === "string") {
-        try {
-          body = JSON.parse(body);
-        } catch {
-          body = {};
-        }
-      }
+    <!-- Toolbar -->
+    <section class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <div class="flex gap-2 w-full md:w-auto">
+        <input id="searchInput" placeholder="Search..." class="flex-1 p-3 rounded-lg border border-[var(--border)] bg-transparent"/>
+        <select id="categorySelect" class="p-3 rounded-lg border border-[var(--border)] bg-transparent">
+          <option value="all">All Categories</option>
+        </select>
+      </div>
+      <div class="flex gap-2 items-center">
+        <label class="text-sm">Density</label>
+        <select id="densitySelect" class="p-2 rounded-lg border border-[var(--border)] bg-transparent">
+          <option value="comfortable">Comfortable</option>
+          <option value="compact">Compact</option>
+        </select>
+        <label class="text-sm">Items per page</label>
+        <select id="pageSizeSelect" class="p-2 rounded-lg border border-[var(--border)] bg-transparent">
+          <option>6</option><option>9</option><option selected>24</option><option>36</option><option>48</option>
+        </select>
+      </div>
+    </section>
 
-      const {
-        title = "",
-        content = "",
-        formattedContent = "",
-        category = "General",
-        tags = [],
-        dateCreated = new Date().toISOString().slice(0, 10),
-        useCount = 0,
-        attachments = []
-      } = body || {};
+    <!-- Grid -->
+    <section>
+      <div id="contentGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch"></div>
+      <div class="flex items-center justify-between mt-4">
+        <button id="prevPage" class="btn" disabled><i data-lucide="chevron-left"></i> Prev</button>
+        <div class="text-sm text-[var(--muted-ink)]">Page <span id="pageNum">1</span> of <span id="pageCount">1</span></div>
+        <button id="nextPage" class="btn">Next <i data-lucide="chevron-right"></i></button>
+      </div>
+    </section>
 
-      const props = {
-        Title: { title: [{ type: "text", text: { content: title } }] },
-        UseCount: { number: Number(useCount || 0) }
+    <!-- Stats -->
+    <section class="card rounded-xl p-4 shadow-soft">
+      <h2 class="font-semibold mb-2">Content Statistics</h2>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+        <div><div id="statTotal" class="text-2xl font-bold">0</div><div class="text-sm text-[var(--muted-ink)]">Total Content</div></div>
+        <div><div id="statUses" class="text-2xl font-bold">0</div><div class="text-sm text-[var(--muted-ink)]">Total Uses</div></div>
+        <div><div id="statCategories" class="text-2xl font-bold">0</div><div class="text-sm text-[var(--muted-ink)]">Categories</div></div>
+        <div><div id="statRecent" class="text-2xl font-bold">0</div><div class="text-sm text-[var(--muted-ink)]">Recently Used</div></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- EDIT MODAL (unchanged from last working build) -->
+  <div id="editModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50">
+    <div class="card w-full max-w-2xl rounded-xl shadow-soft flex flex-col max-h-[90vh]">
+      <div class="flex items-center justify-between p-4 border-b border-[var(--border)]">
+        <h2 class="text-xl font-semibold">Edit Content</h2>
+        <button id="editClose" class="btn"><i data-lucide="x"></i></button>
+      </div>
+      <div class="p-4 space-y-4 overflow-y-auto scrollbar-thin" style="max-height:60vh">
+        <div>
+          <label class="block text-sm mb-1">Title</label>
+          <input id="editTitle" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"/>
+        </div>
+        <div>
+          <label class="block text-sm mb-1">Category</label>
+          <select id="editCategory" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"></select>
+        </div>
+        <div>
+          <label class="block text-sm mb-1">Content</label>
+          <textarea id="editContent" rows="8" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"></textarea>
+        </div>
+        <div>
+          <label class="block text-sm mb-1">Tags (comma separated)</label>
+          <input id="editTags" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"/>
+        </div>
+        <div>
+          <label class="block text-sm mb-2">Attachments</label>
+          <div id="editAttachments" class="flex flex-col gap-2"></div>
+          <p class="text-xs text-[var(--muted-ink)] mt-1">Rename updates filename in Drive and this record.</p>
+        </div>
+        <div>
+          <label class="block text-sm mb-1">WhatsApp Preview</label>
+          <div class="rounded-lg border border-[var(--border)] bg-[var(--muted)] p-2">
+            <div id="editPreview" class="wa-bubble text-sm max-h-48 overflow-auto whitespace-pre-wrap scrollbar-thin"></div>
+          </div>
+        </div>
+      </div>
+      <div class="p-4 border-t border-[var(--border)] flex justify-end gap-2">
+        <button id="editCancel" class="btn">Cancel</button>
+        <button id="editSave" class="btn btn-brand">
+          <span id="editSaveText">Save changes</span>
+          <svg id="editSpinner" class="hidden animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD CONTENT MODAL (restored) -->
+  <div id="addModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50">
+    <div class="card w-full max-w-2xl rounded-xl shadow-soft flex flex-col max-h-[90vh]">
+      <div class="flex items-center justify-between p-4 border-b border-[var(--border)]">
+        <h2 class="text-xl font-semibold">Add New Content</h2>
+        <button id="addClose" class="btn"><i data-lucide="x"></i></button>
+      </div>
+      <div class="p-4 space-y-4 overflow-y-auto scrollbar-thin" style="max-height:60vh">
+        <div>
+          <label class="block text-sm mb-1">Title</label>
+          <input id="titleInput" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent" placeholder="Content title..."/>
+        </div>
+        <div>
+          <label class="block text-sm mb-1">Category</label>
+          <select id="categoryInput" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"></select>
+        </div>
+        <div>
+          <label class="block text-sm mb-1">Content</label>
+          <textarea id="contentInput" rows="8" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent" placeholder="Use **bold**, _italic_, ~strikethrough~, and `inline code`."></textarea>
+        </div>
+        <div>
+          <label class="block text-sm mb-1">Tags (comma separated)</label>
+          <input id="tagsInput" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent" placeholder="motivation, weekly, inspiration"/>
+        </div>
+
+        <!-- Uploads -->
+        <div>
+          <label class="block text-sm mb-2">Attachments (image / video / pdf / doc)</label>
+          <input id="fileInput" type="file" class="hidden" multiple/>
+          <button id="chooseFiles" class="btn"><i data-lucide="paperclip"></i> Choose files</button>
+          <span id="uploadStatus" class="ml-2 text-sm text-[var(--muted-ink)]"></span>
+          <div id="uploadList" class="mt-2 flex flex-col gap-2"></div>
+          <p class="text-xs text-[var(--muted-ink)] mt-1">Files are uploaded to Drive; links are saved with the content.</p>
+        </div>
+
+        <!-- WhatsApp preview -->
+        <div>
+          <label class="block text-sm mb-1">WhatsApp Preview</label>
+          <div class="rounded-lg border border-[var(--border)] bg-[var(--muted)] p-2">
+            <div id="waPreview" class="wa-bubble text-sm max-h-48 overflow-auto whitespace-pre-wrap scrollbar-thin">(start typing above)</div>
+          </div>
+        </div>
+      </div>
+      <div class="p-4 border-t border-[var(--border)] flex justify-end gap-2">
+        <button id="clearAdd" class="btn"><i data-lucide="eraser"></i> Clear</button>
+        <button id="cancelAdd" class="btn">Cancel</button>
+        <button id="saveAdd" class="btn btn-brand" disabled>
+          <span id="saveAddText">Save</span>
+          <svg id="saveSpinner" class="hidden animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  /* ====== CONFIG ====== */
+  const API = 'https://whatsapp-content-library.vercel.app/api/contents';
+  const DRIVE_APP_SCRIPT = 'https://script.google.com/macros/s/AKfycbwWgZ3B3vcN4flFQo1-Ul-AVjVGZozfoe8RDcbr8ez2d_d7r9XvQ7tnePY5q8ZC4w7Ziw/exec';
+  const categories = ['General','Motivation','Tech Tips','Fun Facts','Announcements','Events','Educational'];
+
+  /* ====== STATE ====== */
+  lucide.createIcons();
+  let contents = [];
+  // view state
+  let density = localStorage.getItem('density') || 'comfortable';
+  let pageSize = Number(localStorage.getItem('pageSize') || '24');
+  let page = 1;
+  let theme = localStorage.getItem('theme') || 'light';
+  document.documentElement.setAttribute('data-theme', theme);
+
+  /* ====== UTILS ====== */
+  const escapeHtml = (s='') => s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+  const toWhatsApp = (text='') => text
+    .replace(/\*\*(.*?)\*\*/g,'*$1*').replace(/_(.*?)_/g,'_$1_')
+    .replace(/~(.*?)~/g,'~$1~').replace(/`(.*?)`/g,'$1');
+
+  function whatsappPreviewHTML(text=''){
+    const safe = escapeHtml(text);
+    return safe
+      .replace(/\*(.*?)\*/g,'<strong>$1</strong>')
+      .replace(/_(.*?)_/g,'<em>$1</em>')
+      .replace(/~(.*?)~/g,'<s>$1</s>')
+      .replace(/`([^`]+)`/g,'<code>$1</code>')
+      .replace(/\n/g,'<br/>');
+  }
+
+  /* ====== API ====== */
+  async function syncContents(){
+    const res = await fetch(API);
+    if(!res.ok) { alert('Sync failed: HTTP '+res.status); return; }
+    const data = await res.json();
+    contents = Array.isArray(data.items)?data.items:[];
+    renderCategories();
+    render();
+  }
+  async function createItem(payload){
+    const r = await fetch(API, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    const j = await r.json().catch(()=> ({}));
+    if(!r.ok || j.error){ throw new Error(j.message || j.error || ('HTTP '+r.status)); }
+    return j;
+  }
+  async function updateItem(payload){
+    const r = await fetch(API, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    const j = await r.json().catch(()=> ({}));
+    if(!r.ok || j.error){ throw new Error(j.message || j.error || ('HTTP '+r.status)); }
+    return j;
+  }
+  async function renameDriveFile(fileId, newName){
+    const r = await fetch(DRIVE_APP_SCRIPT, { method:'POST', body: JSON.stringify({ action:'rename', fileId, newName }) });
+    const j = await r.json();
+    if(!r.ok || !j.success){ throw new Error(j.error || 'Rename failed'); }
+    return j.file; // {id, name, url}
+  }
+
+  /* ====== RENDER ====== */
+  function render(){
+    const grid = document.getElementById('contentGrid');
+    const search = (document.getElementById('searchInput').value||'').toLowerCase();
+    const cat = document.getElementById('categorySelect').value;
+
+    const filtered = contents.filter(c =>
+      (!search || (c.title||'').toLowerCase().includes(search) || (c.content||'').toLowerCase().includes(search) || (c.tags||[]).some(t=> (t||'').toLowerCase().includes(search))) &&
+      (cat==='all' || c.category===cat)
+    );
+
+    const total = filtered.length;
+    const pageCount = Math.max(1, Math.ceil(total / pageSize));
+    if(page > pageCount) page = pageCount;
+
+    const start = (page-1)*pageSize;
+    const slice = filtered.slice(start, start+pageSize);
+
+    grid.innerHTML = slice.map(c => {
+      const waText = c.formattedContent || toWhatsApp(c.content || '');
+      const waHTML = whatsappPreviewHTML(waText);
+      const comfy = density === 'comfortable';
+      return `
+      <div class="h-full">
+        <div class="card rounded-xl shadow-soft flex flex-col ${comfy ? 'p-4 h-[420px]' : 'p-3 h-[360px]'}">
+          <div class="flex justify-between items-start">
+            <div>
+              <h3 class="${comfy?'text-lg':'text-base'} font-semibold">${escapeHtml(c.title||'')}</h3>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="chip bg-[var(--brand)] text-[var(--brand-ink)]">${escapeHtml(c.category||'')}</span>
+                <span class="text-xs text-[var(--muted-ink)]">Used ${Number(c.useCount||0)} times</span>
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <button class="btn editBtn" data-id="${escapeHtml(c.id||'')}"><i data-lucide="edit-3"></i> <span class="hidden md:inline">Edit</span></button>
+              <button class="btn copyBtn" data-id="${escapeHtml(c.id||'')}"><i data-lucide="copy"></i> <span class="hidden md:inline">Copy</span></button>
+            </div>
+          </div>
+
+          ${(c.attachments&&c.attachments.length) ? `
+          <div class="flex flex-wrap gap-2 mt-2">
+            ${c.attachments.map(a => `
+              <a href="${escapeHtml(a.url)}" target="_blank" class="chip ${comfy?'':'text-xs'} bg-[var(--chip)] text-[var(--chip-ink)] hover:opacity-90">${escapeHtml(a.name)}</a>
+            `).join('')}
+          </div>` : ''}
+
+          <div class="mt-3 flex-1 min-h-0 rounded-lg border border-[var(--border)] bg-[var(--muted)] overflow-hidden">
+            <div class="h-full overflow-auto ${comfy?'p-3 text-sm':'p-2 text-[13px]'} scrollbar-thin">
+              <div class="wa-bubble whitespace-pre-wrap w-full">${waHTML}</div>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap gap-1 mt-3 ${comfy?'':'text-xs'}">
+            ${(c.tags||[]).map(t=>`<span class="chip bg-black/5 dark:bg-white/5">${escapeHtml('#'+t)}</span>`).join('')}
+          </div>
+
+          <div class="text-xs text-[var(--muted-ink)] flex justify-between mt-auto pt-3">
+            <span>Created: ${escapeHtml(c.dateCreated||'')}</span>
+            ${c.lastUsed ? `<span>Last used: ${escapeHtml(c.lastUsed)}</span>` : '<span></span>'}
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+
+    document.querySelectorAll('.copyBtn').forEach(btn=>{
+      btn.addEventListener('click', ()=> copyToClipboard(btn.getAttribute('data-id')));
+    });
+    document.querySelectorAll('.editBtn').forEach(btn=>{
+      btn.addEventListener('click', ()=> openEditModal(btn.getAttribute('data-id')));
+    });
+
+    document.getElementById('statTotal').textContent = contents.length;
+    document.getElementById('statUses').textContent = contents.reduce((a,c)=>a+(c.useCount||0),0);
+    document.getElementById('statCategories').textContent = new Set(contents.map(c=>c.category)).size;
+    document.getElementById('statRecent').textContent = contents.filter(c=>c.lastUsed).length;
+
+    document.getElementById('pageNum').textContent = page;
+    document.getElementById('pageCount').textContent = pageCount;
+    prevPage.disabled = page<=1;
+    nextPage.disabled = page>=pageCount;
+
+    lucide.createIcons();
+  }
+
+  function renderCategories(){
+    const sel = document.getElementById('categorySelect');
+    const current = sel.value || 'all';
+    sel.innerHTML = '<option value="all">All Categories</option>' + categories.map(c=>`<option value="${c}">${c}</option>`).join('');
+    sel.value = current;
+    const editSel = document.getElementById('editCategory');
+    editSel.innerHTML = categories.map(c=>`<option value="${c}">${c}</option>`).join('');
+    const addSel = document.getElementById('categoryInput');
+    addSel.innerHTML = categories.map(c=>`<option value="${c}">${c}</option>`).join('');
+  }
+
+  async function copyToClipboard(id){
+    try{
+      const item = contents.find(x=>String(x.id)===String(id));
+      if(!item) return alert('Item not found.');
+      await navigator.clipboard.writeText(item.formattedContent || item.content || '');
+      item.useCount = Number(item.useCount||0) + 1;
+      item.lastUsed = new Date().toISOString().slice(0,10);
+      render();
+      alert('Copied to clipboard!');
+    }catch(e){ console.error(e); alert('Copy failed.'); }
+  }
+
+  /* ====== EDIT MODAL ====== */
+  const editModal = document.getElementById('editModal');
+  const editClose = document.getElementById('editClose');
+  const editCancel = document.getElementById('editCancel');
+  const editSave = document.getElementById('editSave');
+  const editSaveText = document.getElementById('editSaveText');
+  const editSpinner = document.getElementById('editSpinner');
+  const editTitle = document.getElementById('editTitle');
+  const editCategory = document.getElementById('editCategory');
+  const editContent = document.getElementById('editContent');
+  const editTags = document.getElementById('editTags');
+  const editAttachments = document.getElementById('editAttachments');
+  const editPreview = document.getElementById('editPreview');
+  let editItem = null;
+
+  function openEditModal(id){
+    editItem = contents.find(x=> String(x.id) === String(id));
+    if(!editItem) return alert('Item not found');
+    editTitle.value = editItem.title || '';
+    editCategory.value = editItem.category || categories[0];
+    editContent.value = editItem.content || '';
+    editTags.value = (editItem.tags || []).join(', ');
+    drawEditAttachments();
+    updateEditPreview();
+    editModal.classList.remove('hidden'); editModal.classList.add('flex');
+  }
+  function closeEditModal(){ editModal.classList.add('hidden'); editModal.classList.remove('flex'); }
+  editClose.addEventListener('click', closeEditModal);
+  editCancel.addEventListener('click', closeEditModal);
+  function updateEditPreview(){ editPreview.innerHTML = whatsappPreviewHTML(toWhatsApp(editContent.value||'')); }
+  editContent.addEventListener('input', updateEditPreview);
+
+  function drawEditAttachments(){
+    const list = (editItem.attachments || []);
+    if (!list.length){ editAttachments.innerHTML = '<div class="text-sm text-[var(--muted-ink)]">No files.</div>'; return; }
+    editAttachments.innerHTML = list.map((a,idx)=>`
+      <div class="flex items-center gap-2 border border-[var(--border)] rounded-lg p-2">
+        <i data-lucide="file" class="w-4 h-4"></i>
+        <a class="underline text-sm" href="${escapeHtml(a.url)}" target="_blank">${escapeHtml(a.name)}</a>
+        ${a.id ? `
+        <input class="p-1 border border-[var(--border)] rounded text-sm bg-transparent" value="${escapeHtml(a.name)}" id="attName${idx}" />
+        <button class="btn text-xs renameBtn" data-idx="${idx}"><i data-lucide="edit-3"></i> Rename</button>
+        ` : `<span class="text-xs text-[var(--muted-ink)]">(cannot rename — no fileId)</span>`}
+      </div>
+    `).join('');
+    editAttachments.querySelectorAll('.renameBtn').forEach(b=>{
+      b.addEventListener('click', async ()=>{
+        const i = Number(b.getAttribute('data-idx'));
+        const att = editItem.attachments[i];
+        const input = document.getElementById('attName'+i);
+        const newName = (input.value||'').trim();
+        if(!newName) return alert('Enter a new name');
+        try{
+          b.disabled = true;
+          const renamed = await renameDriveFile(att.id, newName);
+          editItem.attachments[i].name = renamed.name;
+          drawEditAttachments();
+          alert('Renamed.');
+        }catch(err){ console.error(err); alert('Rename failed: '+err.message); }
+        finally{ b.disabled = false; }
+      });
+    });
+    lucide.createIcons();
+  }
+
+  editSave.addEventListener('click', async ()=>{
+    if(!editItem) return;
+    try{
+      editSave.disabled = true; editSaveText.textContent = 'Saving…'; editSpinner.classList.remove('hidden');
+      const payload = {
+        id: editItem.id,
+        title: (editTitle.value||'').trim(),
+        category: editCategory.value || 'General',
+        content: (editContent.value||'').trim(),
+        formattedContent: toWhatsApp(editContent.value||''),
+        tags: (editTags.value||'').split(',').map(t=>t.trim()).filter(Boolean),
+        attachments: (editItem.attachments||[]).map(a=>({ id:a.id, name:a.name, url:a.url }))
       };
-      if (content)
-        props.Content = { rich_text: [{ type: "text", text: { content } }] };
-      if (formattedContent)
-        props.Formatted = {
-          rich_text: [{ type: "text", text: { content: formattedContent } }]
-        };
-      if (category) props.Category = { select: { name: category } };
-      if (Array.isArray(tags) && tags.length)
-        props.Tags = { multi_select: tags.map((t) => ({ name: t })) };
-      if (dateCreated) props.Created = { date: { start: dateCreated } };
+      await updateItem(payload);
+      Object.assign(editItem, payload);
+      closeEditModal(); render(); alert('Saved.');
+    }catch(e){ console.error(e); alert('Save failed: '+e.message); }
+    finally{ editSave.disabled=false; editSaveText.textContent='Save changes'; editSpinner.classList.add('hidden'); }
+  });
 
-      const files = (attachments || [])
-        .filter((a) => a?.url)
-        .map((a) => ({
-          name: a.name || "attachment",
-          external: { url: a.url }
-        }));
-      if (files.length) props.Attachments = { files };
+  /* ====== ADD MODAL (uploads w/ disable Save) ====== */
+  const addModal = document.getElementById('addModal');
+  const addClose = document.getElementById('addClose');
+  const cancelAdd = document.getElementById('cancelAdd');
+  const addBtn = document.getElementById('addBtn');
+  const clearAdd = document.getElementById('clearAdd');
+  const saveAdd = document.getElementById('saveAdd');
+  const saveAddText = document.getElementById('saveAddText');
+  const saveSpinner = document.getElementById('saveSpinner');
 
-      const page = await notion.pages.create({
-        parent: { database_id: NOTION_DATABASE_ID },
-        properties: props
-      });
+  const titleInput = document.getElementById('titleInput');
+  const categoryInput = document.getElementById('categoryInput');
+  const contentInput = document.getElementById('contentInput');
+  const tagsInput = document.getElementById('tagsInput');
+  const waPreview = document.getElementById('waPreview');
 
-      return res.status(200).json({ ok: true, id: page.id });
+  const chooseFiles = document.getElementById('chooseFiles');
+  const fileInput = document.getElementById('fileInput');
+  const uploadStatus = document.getElementById('uploadStatus');
+  const uploadList = document.getElementById('uploadList');
+
+  let addAttachments = [];
+  let inflightUploads = 0;
+
+  function openAdd(){ resetAdd(); addModal.classList.remove('hidden'); addModal.classList.add('flex'); titleInput.focus(); }
+  function closeAdd(){ addModal.classList.add('hidden'); addModal.classList.remove('flex'); }
+  addBtn.addEventListener('click', openAdd);
+  addClose.addEventListener('click', closeAdd);
+  cancelAdd.addEventListener('click', closeAdd);
+  clearAdd.addEventListener('click', resetAdd);
+
+  function resetAdd(){
+    titleInput.value=''; categoryInput.value=categories[0]; contentInput.value=''; tagsInput.value='';
+    addAttachments=[]; inflightUploads=0; uploadList.innerHTML=''; uploadStatus.textContent='';
+    waPreview.innerHTML='(start typing above)'; updateSaveDisabled();
+  }
+
+  function updateSaveDisabled(){
+    const validFields = (titleInput.value||'').trim() && (contentInput.value||'').trim();
+    saveAdd.disabled = inflightUploads>0 || !validFields;
+  }
+
+  contentInput.addEventListener('input', ()=>{
+    waPreview.innerHTML = whatsappPreviewHTML(toWhatsApp(contentInput.value||'')); updateSaveDisabled();
+  });
+  titleInput.addEventListener('input', updateSaveDisabled);
+
+  chooseFiles.addEventListener('click', ()=> fileInput.click());
+  fileInput.addEventListener('change', async (e)=>{
+    const files = Array.from(e.target.files || []);
+    if(!files.length) return;
+    inflightUploads += files.length; updateSaveDisabled();
+    uploadStatus.textContent = `Uploading ${inflightUploads} file(s)…`;
+    for(const file of files){
+      try{
+        const base64 = await fileToBase64(file);
+        const res = await fetch(DRIVE_APP_SCRIPT, {
+          method:'POST',
+          body: JSON.stringify({
+            files:[{ name:file.name, mimeType:file.type || 'application/octet-stream', dataBase64: base64 }]
+          })
+        });
+        const j = await res.json();
+        if(!res.ok || !j.success) throw new Error(j.error || 'Upload failed');
+        const f = j.files[0];
+        addAttachments.push({ id:f.id, name:f.name, url:f.url });
+        drawUploadList();
+      }catch(err){
+        console.error(err); alert('Failed upload: '+err.message);
+      }finally{
+        inflightUploads--; uploadStatus.textContent = inflightUploads?`Uploading ${inflightUploads}…`:'';
+        updateSaveDisabled();
+      }
     }
+    fileInput.value = '';
+  });
 
-    return res.status(405).json({ error: "Method not allowed" });
-  } catch (e) {
-    // Log full error to Vercel logs, but return safe details in response
-    console.error("API /api/contents error:", e);
+  function drawUploadList(){
+    if(!addAttachments.length){ uploadList.innerHTML = ''; return; }
+    uploadList.innerHTML = addAttachments.map((a,idx)=>`
+      <div class="flex items-center gap-2 border border-[var(--border)] rounded-lg p-2">
+        <i data-lucide="file" class="w-4 h-4"></i>
+        <a class="underline text-sm" href="${escapeHtml(a.url)}" target="_blank">${escapeHtml(a.name)}</a>
+        <button class="btn text-xs removeFile" data-idx="${idx}"><i data-lucide="x"></i> Remove</button>
+      </div>
+    `).join('');
+    uploadList.querySelectorAll('.removeFile').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        const i = Number(b.getAttribute('data-idx')); addAttachments.splice(i,1); drawUploadList();
+      });
+    });
+    lucide.createIcons();
+  }
 
-    return res.status(500).json({
-      error: "Server error",
-      message: e?.message || String(e),
-      // expose minimal hints only when ?debug=1
-      debug:
-        debug
-          ? {
-              name: e?.name,
-              code: e?.code,
-              status: e?.status,
-              body: e?.body
-            }
-          : undefined,
-      hint:
-        "Check: (1) env vars, (2) Notion integration invited to the database (Share → Invite), (3) property names: Title, Content, Formatted, Category, Tags, Created, UseCount, LastUsed (optional), Attachments."
+  saveAdd.addEventListener('click', async ()=>{
+    if(inflightUploads>0) return; // guarded anyway by disabled state
+    try{
+      saveAdd.disabled = true; saveAddText.textContent='Saving…'; saveSpinner.classList.remove('hidden');
+      const payload = {
+        title: (titleInput.value||'').trim(),
+        category: categoryInput.value || 'General',
+        content: (contentInput.value||'').trim(),
+        formattedContent: toWhatsApp(contentInput.value||''),
+        tags: (tagsInput.value||'').split(',').map(t=>t.trim()).filter(Boolean),
+        attachments: addAttachments.slice(),
+        dateCreated: new Date().toISOString().slice(0,10),
+        useCount: 0
+      };
+      await createItem(payload);
+      closeAdd(); await syncContents(); alert('Content added!');
+    }catch(e){ console.error(e); alert('Add failed: '+e.message); }
+    finally{ saveAdd.disabled=false; saveAddText.textContent='Save'; saveSpinner.classList.add('hidden'); }
+  });
+
+  function fileToBase64(file){
+    return new Promise((resolve,reject)=>{
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
     });
   }
-}
+
+  /* ====== CONTROLS / VIEW ====== */
+  const themeBtn = document.getElementById('themeBtn');
+  function setTheme(next){
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+    themeBtn.innerHTML = next==='dark'
+      ? `<i data-lucide="sun"></i><span class="hidden md:inline">Light</span>`
+      : `<i data-lucide="moon"></i><span class="hidden md:inline">Dark</span>`;
+    lucide.createIcons();
+  }
+  setTheme(theme);
+  themeBtn.addEventListener('click', ()=>{
+    theme = (theme==='dark'?'light':'dark'); setTheme(theme);
+  });
+
+  document.getElementById('searchInput').addEventListener('input', ()=>{ page=1; render(); });
+  document.getElementById('categorySelect').addEventListener('change', ()=>{ page=1; render(); });
+
+  const densitySelect = document.getElementById('densitySelect');
+  const pageSizeSelect = document.getElementById('pageSizeSelect');
+  const prevPage = document.getElementById('prevPage');
+  const nextPage = document.getElementById('nextPage');
+
+  densitySelect.value = density;
+  pageSizeSelect.value = String(pageSize);
+  densitySelect.addEventListener('change', ()=>{ density = densitySelect.value; localStorage.setItem('density', density); render(); });
+  pageSizeSelect.addEventListener('change', ()=>{ pageSize = Number(pageSizeSelect.value); localStorage.setItem('pageSize', String(pageSize)); page = 1; render(); });
+  prevPage.addEventListener('click', ()=>{ if(page>1){ page--; render(); }});
+  nextPage.addEventListener('click', ()=>{ page++; render(); });
+
+  document.getElementById('syncBtn').addEventListener('click', syncContents);
+
+  /* ====== BOOT ====== */
+  window.addEventListener('DOMContentLoaded', ()=>{
+    renderCategories();
+    syncContents();
+  });
+</script>
+</body>
+</html>
