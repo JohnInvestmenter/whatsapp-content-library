@@ -26,45 +26,19 @@
             'border-light': '#dbe6db',
             'border-dark': '#304a30'
           },
-          fontFamily: { display: 'Lexend' },
-          borderRadius: { DEFAULT: '0.25rem', lg: '0.5rem', xl: '0.75rem', full: '9999px' }
+          fontFamily: { display: 'Lexend' }
         }
       }
     };
   </script>
-  <style>
-    .form-select{background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23608a60' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");background-position:right .5rem center;background-repeat:no-repeat;background-size:1.5em 1.5em;padding-right:2.5rem;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    .dark .form-select{background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23a0c2a0' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")}
-    .scrollbar-thin{scrollbar-width:thin}
-    .scrollbar-thin::-webkit-scrollbar{height:6px;width:6px}
-    .scrollbar-thin::-webkit-scrollbar-thumb{background:rgba(0,0,0,.25);border-radius:9999px}
-  </style>
 </head>
 <body class="bg-background-light dark:bg-background-dark font-display text-content-light dark:text-content-dark">
 <div class="flex flex-col min-h-screen">
-  <!-- Header -->
-  <header class="sticky top-0 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-sm z-10 border-b border-border-light dark:border-border-dark">
-    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between h-16">
-        <div class="flex items-center gap-3">
-          <img src="https://onecdn.io/media/ffb500c6-8305-4802-8cf9-6b55e6bd5ed5/md2x" alt="InvestMenter" class="h-8 w-auto object-contain"/>
-          <h1 class="text-xl font-bold">InvestMenter WhatsApp Content Library</h1>
-        </div>
-        <nav class="hidden md:flex items-center gap-8">
-          <a class="text-sm font-medium text-primary" href="#">Content Library</a>
-        </nav>
-        <div class="flex items-center gap-4">
-          <button id="themeToggle" class="p-2 rounded-full hover:bg-primary/10" title="Toggle theme">
-            <span class="material-symbols-outlined">dark_mode</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  </header>
 
   <!-- Main -->
   <main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
       <!-- Library -->
       <div class="lg:col-span-2 space-y-8">
         <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
@@ -72,56 +46,46 @@
             <h2 class="text-2xl font-semibold tracking-tight">Content Library</h2>
             <p class="text-subtle-light dark:text-subtle-dark mt-1">Manage your content for WhatsApp</p>
           </div>
-          <div class="flex items-center gap-3">
-            <button id="syncBtn" class="px-4 py-2 rounded-lg bg-primary/20 text-sm font-bold">Sync Now</button>
-            <button id="scrollToForm" class="px-4 py-2 rounded-lg bg-primary text-white text-sm font-bold">+ Add Content</button>
-          </div>
-        </div>
-
-        <!-- Filters -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <input id="searchInput" placeholder="Search…" class="px-3 py-2 rounded-lg border"/>
-          <select id="categorySelect" class="form-select px-3 py-2 rounded-lg border"><option value="all">All Categories</option></select>
-          <div class="flex items-stretch">
-            <button id="clearFilters" class="px-3 py-2 rounded-l-lg border text-sm font-bold">Clear</button>
-            <button id="copySelected" class="px-3 py-2 rounded-r-lg border text-sm font-bold">Quick Copy</button>
-          </div>
         </div>
 
         <!-- Cards Grid -->
         <div id="contentGrid" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 items-stretch"></div>
+        <!-- Pagination -->
         <div id="pagination" class="flex justify-center gap-2 mt-6"></div>
-        <div id="messageBar" class="hidden mt-4"></div>
       </div>
 
-      <!-- Add New Content + Live Preview -->
+      <!-- Add/Edit Form -->
       <div class="lg:col-span-1 space-y-8">
-        <div class="p-6 border rounded-lg space-y-6">
+        <div class="p-6 border border-border-light dark:border-border-dark rounded-lg space-y-6">
           <h3 class="text-xl font-bold">Add / Edit Content</h3>
           <form id="addForm" class="space-y-4">
             <input type="hidden" id="editId"/>
-            <div><label class="text-sm font-medium">Title</label><input id="title" class="w-full px-3 py-2 border rounded-lg" placeholder="Enter title"/></div>
-            <div><label class="text-sm font-medium">Category</label><select id="category" class="form-select w-full px-3 py-2 border rounded-lg"></select></div>
-            <div><label class="text-sm font-medium">Content</label><textarea id="content" class="w-full px-3 py-2 border rounded-lg" rows="6"></textarea></div>
-            <div><label class="text-sm font-medium">Tags</label><input id="tags" class="w-full px-3 py-2 border rounded-lg" placeholder="Comma separated"/></div>
+            <div>
+              <label class="text-sm font-medium">Title</label>
+              <input id="title" class="w-full px-3 py-2 border rounded-lg"/>
+            </div>
+            <div>
+              <label class="text-sm font-medium">Category</label>
+              <select id="category" class="form-select w-full px-3 py-2 border rounded-lg"></select>
+            </div>
+            <div>
+              <label class="text-sm font-medium">Content</label>
+              <textarea id="content" class="w-full px-3 py-2 border rounded-lg" rows="6"></textarea>
+            </div>
+            <div>
+              <label class="text-sm font-medium">Tags</label>
+              <input id="tags" class="w-full px-3 py-2 border rounded-lg"/>
+            </div>
             <div>
               <label class="text-sm font-medium">Attachments</label>
               <input id="file-upload" type="file" multiple class="block w-full mt-2"/>
               <div id="attachmentsList" class="mt-2 flex flex-wrap gap-2"></div>
             </div>
-            <div class="pt-4 flex flex-col sm:flex-row-reverse gap-3">
+            <div class="flex justify-between">
               <button id="saveBtn" class="px-4 py-2 rounded-lg bg-primary text-white font-bold">Save</button>
-              <button id="cancelBtn" type="button" class="px-4 py-2 rounded-lg border font-bold">Cancel</button>
-              <button id="clearBtn" type="reset" class="px-4 py-2 text-sm font-bold">Clear</button>
+              <button id="cancelBtn" type="button" class="px-4 py-2 rounded-lg border">Cancel</button>
             </div>
           </form>
-        </div>
-        <div class="p-6 border rounded-lg space-y-4">
-          <h3 class="text-xl font-bold">WhatsApp Preview</h3>
-          <div class="bg-gray-200 dark:bg-gray-800 p-4 rounded-lg">
-            <div id="previewTitle" class="font-semibold">—</div>
-            <div id="waPreview" class="text-sm leading-snug whitespace-pre-wrap max-h-48 overflow-auto">(start typing…)</div>
-          </div>
         </div>
       </div>
     </div>
@@ -129,82 +93,71 @@
 </div>
 
 <script>
-const DEFAULT_API = 'https://whatsapp-content-library.vercel.app/api/contents';
-const API = DEFAULT_API;
-let contents = [], newAttachments = [], isUploading = false, currentPage=1, perPage=6;
+const API = 'https://whatsapp-content-library.vercel.app/api/contents';
+let contents=[],newAttachments=[],currentPage=1,perPage=6;
 
-// ===== UTIL =====
-const $ = (sel)=>document.querySelector(sel);
-const escapeHtml = (s='') => s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
-const toWhatsApp = (t='') => t.replace(/\*\*(.*?)\*\*/g,'*$1*').replace(/__(.*?)__/g,'_$1_').replace(/~~(.*?)~~/g,'~$1~').replace(/`(.*?)`/g,'$1');
-function whatsappPreviewHTML(t=''){const s=escapeHtml(t);return s.replace(/\*(.*?)\*/g,'<strong>$1</strong>').replace(/_(.*?)_/g,'<em>$1</em>').replace(/~(.*?)~/g,'<s>$1</s>').replace(/`([^`]+)`/g,'<code>$1</code>');}
+// ====== UTILS ======
+const $=(s)=>document.querySelector(s);
+const escapeHtml=(s='')=>s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
 
-// ===== FETCH =====
+// ====== FETCH ======
 async function fetchJSON(url){const r=await fetch(url);return await r.json();}
 async function syncContents(){const data=await fetchJSON(API);contents=Array.isArray(data)?data:[];render();}
 
-// ===== RENDER =====
+// ====== RENDER ======
 function render(){
-  const grid=$("#contentGrid");const search=$("#searchInput").value.toLowerCase();const cat=$("#categorySelect").value;
-  const filtered=contents.filter(c=>(!search||c.title?.toLowerCase().includes(search)||c.content?.toLowerCase().includes(search))&&(cat==='all'||c.category===cat));
-  const totalPages=Math.ceil(filtered.length/perPage);const start=(currentPage-1)*perPage;const paginated=filtered.slice(start,start+perPage);
-  grid.innerHTML=paginated.map(c=>{
-    const waHTML=whatsappPreviewHTML(c.formattedContent||c.content||'');
-    return `<div class="border p-4 rounded-lg flex flex-col">
+  const grid=$("#contentGrid");const filtered=contents;
+  const totalPages=Math.ceil(filtered.length/perPage);
+  const start=(currentPage-1)*perPage;
+  const paginated=filtered.slice(start,start+perPage);
+  grid.innerHTML=paginated.map(c=>`
+    <div class="border p-4 rounded-lg flex flex-col">
       <h3 class="font-semibold">${escapeHtml(c.title||'')}</h3>
       <p class="text-xs">${escapeHtml(c.category||'')}</p>
-      <div class="flex gap-1 mt-2">
+      <div class="flex gap-2 mt-2">
         <button class="editBtn px-2 border rounded text-xs" data-id="${c.id}">Edit</button>
       </div>
-      <div class="flex-1 mt-2 text-sm">${waHTML}</div>
-    </div>`;
-  }).join('');
+      <div class="mt-2 text-sm">${escapeHtml(c.content||'')}</div>
+    </div>`).join('');
   $("#pagination").innerHTML=Array.from({length:totalPages},(_,i)=>`<button onclick="goToPage(${i+1})" class="px-2 ${i+1===currentPage?'bg-primary text-white':''}">${i+1}</button>`).join('');
   grid.querySelectorAll(".editBtn").forEach(btn=>btn.addEventListener("click",()=>loadForEdit(btn.dataset.id)));
 }
 function goToPage(n){currentPage=n;render();}
 
-// ===== FORM =====
-const title=$("#title"),content=$("#content"),tags=$("#tags"),previewTitle=$("#previewTitle"),waPreview=$("#waPreview");
-function clearForm(){ $("#addForm").reset();$("#editId").value=""; newAttachments=[];drawAttachmentsUI(); previewTitle.textContent="—";waPreview.textContent="(start typing…)";}
-function drawAttachmentsUI(){ $("#attachmentsList").innerHTML=newAttachments.map((a,i)=>`
-  <div class="flex items-center gap-2 border px-2 py-1 rounded">
-    <a href="${a.url}" target="_blank" class="underline text-sm">${escapeHtml(a.name)}</a>
-    <button type="button" class="renameAtt text-blue-500" data-idx="${i}">✎</button>
-    <button type="button" class="removeAtt text-red-500" data-idx="${i}">✕</button>
-  </div>`).join("")||"No files yet.";
+// ====== FORM ======
+function clearForm(){ $("#addForm").reset();$("#editId").value="";newAttachments=[];drawAttachmentsUI();}
+function drawAttachmentsUI(){
+  $("#attachmentsList").innerHTML=newAttachments.map((a,i)=>`
+    <div class="flex items-center gap-2 border px-2 py-1 rounded">
+      <span>${escapeHtml(a.name)}</span>
+      <button type="button" class="renameAtt text-blue-500" data-idx="${i}">✎</button>
+      <button type="button" class="removeAtt text-red-500" data-idx="${i}">✕</button>
+    </div>`).join('')||"No files yet.";
   $("#attachmentsList").querySelectorAll(".removeAtt").forEach(b=>b.onclick=()=>{newAttachments.splice(b.dataset.idx,1);drawAttachmentsUI();});
   $("#attachmentsList").querySelectorAll(".renameAtt").forEach(b=>b.onclick=()=>{const n=prompt("Rename:",newAttachments[b.dataset.idx].name);if(n){newAttachments[b.dataset.idx].name=n;drawAttachmentsUI();}});
 }
 
-// ===== CRUD =====
+// ====== CRUD ======
 async function createItem(){
-  const body={title:title.value,content:content.value,formattedContent:toWhatsApp(content.value),tags:tags.value.split(',').map(t=>t.trim()),attachments:newAttachments};
+  const body={title:$("#title").value,content:$("#content").value,category:$("#category").value,tags:$("#tags").value.split(',').map(t=>t.trim()),attachments:newAttachments};
   await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
   clearForm();syncContents();
 }
 async function updateItem(id){
-  const body={title:title.value,content:content.value,formattedContent:toWhatsApp(content.value),tags:tags.value.split(',').map(t=>t.trim()),attachments:newAttachments};
+  const body={title:$("#title").value,content:$("#content").value,category:$("#category").value,tags:$("#tags").value.split(',').map(t=>t.trim()),attachments:newAttachments};
   await fetch(`${API}/${id}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
   clearForm();syncContents();
 }
 function loadForEdit(id){
   const item=contents.find(c=>String(c.id)===String(id));if(!item)return;
-  $("#editId").value=id;title.value=item.title;content.value=item.content;tags.value=(item.tags||[]).join(",");newAttachments=[...(item.attachments||[])];drawAttachmentsUI();
-  previewTitle.textContent=item.title;waPreview.innerHTML=whatsappPreviewHTML(item.content);
+  $("#editId").value=id;$("#title").value=item.title;$("#category").value=item.category;$("#content").value=item.content;$("#tags").value=(item.tags||[]).join(",");newAttachments=[...(item.attachments||[])];drawAttachmentsUI();
 }
 
-// ===== EVENTS =====
+// ====== EVENTS ======
 $("#addForm").addEventListener("submit",e=>{e.preventDefault();const id=$("#editId").value;if(id)updateItem(id);else createItem();});
 $("#cancelBtn").addEventListener("click",clearForm);
-title.addEventListener("input",()=>{previewTitle.textContent=title.value||"—";});
-content.addEventListener("input",()=>{waPreview.innerHTML=whatsappPreviewHTML(content.value)||"(start typing…)";});
-$("#searchInput").addEventListener("input",render);
-$("#categorySelect").addEventListener("change",render);
-$("#clearFilters").addEventListener("click",()=>{$("#searchInput").value="";$("#categorySelect").value="all";render();});
-window.goToPage=goToPage;
 
-// ===== INIT =====
+// ====== INIT ======
 window.addEventListener("DOMContentLoaded",()=>{syncContents();});
 </script>
 </body>
