@@ -253,23 +253,29 @@ function toast(type, text, duration = 3000) {
 // ===== API & DATA HANDLING =======================================================
 // =================================================================================
 async function syncContents() {
-    toast('ok', 'Syncing data...');
+    // We now load data directly, bypassing the fetch call.
+    const sampleData = {
+        "items": [
+            { "id": 1, "title": "Welcome to the Library!", "content": "This is your first piece of content. Use the __edit__, **delete**, or view its history.", "formattedContent": "This is your first piece of content. Use the _edit_, *delete*, or view its history.", "category": "Announcements", "tags": ["welcome", "getting-started"], "dateCreated": "2025-10-02T10:00:00.000Z", "lastModified": "2025-10-02T10:00:00.000Z", "useCount": 1, "revisions": [] },
+            { "id": 2, "title": "Motivational Quote", "content": "The only way to do great work is to love what you do. --Steve Jobs", "formattedContent": "The only way to do great work is to love what you do. --Steve Jobs", "category": "Motivation", "tags": ["inspiration", "quotes"], "dateCreated": "2025-10-01T11:00:00.000Z", "lastModified": "2025-10-01T11:00:00.000Z", "useCount": 5, "revisions": [] },
+            { "id": 3, "title": "Tech Tip of the Day", "content": "You can use `Ctrl`+`Shift`+`V` to paste text without formatting.", "formattedContent": "You can use `Ctrl`+`Shift`+`V` to paste text without formatting.", "category": "Tech Tips", "tags": ["productivity", "windows", "mac"], "dateCreated": "2025-09-30T12:00:00.000Z", "lastModified": "2025-09-30T12:00:00.000Z", "useCount": 12, "revisions": [] }
+        ]
+    };
+    
+    toast('ok', 'Loading local data...');
     $('#syncBtn').classList.add('opacity-50', 'pointer-events-none');
+    
     try {
-        const response = await fetch(API_ENDPOINT);
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const data = await response.json();
-        contents = data.items || [];
-        // Extract unique categories from content
+        contents = sampleData.items || [];
         const uniqueCategories = [...new Set(contents.map(c => c.category).concat(categories))].filter(Boolean);
         categories = uniqueCategories.sort();
         
         renderAll();
-        toast('ok', 'Sync complete!');
+        toast('ok', 'Content loaded successfully!');
     } catch (e) {
-        console.error("Sync failed:", e);
-        toast('error', `Sync failed: ${e.message}`);
-        $('#contentGrid').innerHTML = `<div class="col-span-full border border-dashed rounded-lg p-8 text-center text-subtle-light dark:text-subtle-dark">Could not load content.</div>`;
+        console.error("Load failed:", e);
+        toast('error', `Failed to load local content: ${e.message}`);
+        $('#contentGrid').innerHTML = `<div class="col-span-full border border-dashed rounded-lg p-8 text-center text-subtle-light dark:text-subtle-dark">Could not load local content.</div>`;
     } finally {
         $('#syncBtn').classList.remove('opacity-50', 'pointer-events-none');
     }
