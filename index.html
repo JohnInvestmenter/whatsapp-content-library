@@ -38,7 +38,6 @@
     .scrollbar-thin{scrollbar-width:thin}
     .scrollbar-thin::-webkit-scrollbar{height:6px;width:6px}
     .scrollbar-thin::-webkit-scrollbar-thumb{background:rgba(0,0,0,.25);border-radius:9999px}
-    /* Modal styles */
     .modal-hidden { display: none; }
   </style>
 </head>
@@ -52,9 +51,6 @@
           <h1 class="text-xl font-bold">InvestMenter WhatsApp Content Library</h1>
         </div>
         <div id="auth-container" class="flex items-center gap-4">
-          <button id="themeToggle" class="p-2 rounded-full hover:bg-primary/10" title="Toggle theme">
-            <span class="material-symbols-outlined">dark_mode</span>
-          </button>
           </div>
       </div>
     </div>
@@ -70,7 +66,7 @@
           </div>
           <div class="flex items-center gap-3">
             <button id="syncBtn" class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-primary/20 hover:bg-primary/30 dark:bg-primary/30 dark:hover:bg-primary/40 transition-colors text-sm font-bold">
-              <span class="material-symbols-outlined text-base">sync</span> Sync Now
+              <span class="material-symbols-outlined text-base">sync</span> Reload Data
             </button>
             <button id="manageCategoriesBtn" class="hidden flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-primary/20 hover:bg-primary/30 dark:bg-primary/30 dark:hover:bg-primary/40 transition-colors text-sm font-bold">
               <span class="material-symbols-outlined text-base">category</span> Manage Categories
@@ -189,7 +185,6 @@
 // =================================================================================
 // ===== CONFIG & STATE ============================================================
 // =================================================================================
-const API_ENDPOINT = 'https://api.npoint.io/a8c6a2a5e4d2b8a34f4b'; // Using a mock JSON API
 let contents = [];
 let categories = ['Motivation', 'Tech Tips', 'Fun Facts', 'Announcements'];
 let currentUser = null; // { username, role }
@@ -252,8 +247,10 @@ function toast(type, text, duration = 3000) {
 // =================================================================================
 // ===== API & DATA HANDLING =======================================================
 // =================================================================================
+
+// THIS IS THE NEW, UPDATED FUNCTION. IT LOADS DATA LOCALLY.
 async function syncContents() {
-    // We now load data directly, bypassing the fetch call.
+    // We now load data directly, bypassing any external network calls.
     const sampleData = {
         "items": [
             { "id": 1, "title": "Welcome to the Library!", "content": "This is your first piece of content. Use the __edit__, **delete**, or view its history.", "formattedContent": "This is your first piece of content. Use the _edit_, *delete*, or view its history.", "category": "Announcements", "tags": ["welcome", "getting-started"], "dateCreated": "2025-10-02T10:00:00.000Z", "lastModified": "2025-10-02T10:00:00.000Z", "useCount": 1, "revisions": [] },
@@ -281,8 +278,9 @@ async function syncContents() {
     }
 }
 
+
 // NOTE: The following functions (save, delete) are simulations.
-// They modify the local 'contents' array but don't persist to the API.
+// They modify the local 'contents' array but don't persist permanently.
 function saveItem(itemData) {
     if (isEditing) { // Update existing item
         const index = contents.findIndex(c => c.id == isEditing);
@@ -331,6 +329,7 @@ function updateUIVisibility() {
         authContainer.innerHTML = `
             <div class="text-sm">Welcome, <strong class="font-bold">${escapeHtml(currentUser.username)}</strong>!</div>
             <button id="logoutBtn" class="px-3 py-2 rounded-lg bg-primary/20 hover:bg-primary/30 text-sm font-bold">Logout</button>
+            <button id="themeToggle" class="p-2 rounded-full hover:bg-primary/10" title="Toggle theme"><span class="material-symbols-outlined">dark_mode</span></button>
         `;
         $('#logoutBtn').addEventListener('click', () => {
             logout();
@@ -342,8 +341,9 @@ function updateUIVisibility() {
             <button id="loginBtn" class="px-4 py-2 rounded-lg bg-primary text-white hover:opacity-90 text-sm font-bold">Login</button>
         `;
         $('#loginBtn').addEventListener('click', () => openModal('loginModal'));
-        $('#themeToggle').addEventListener('click', toggleTheme);
     }
+    // Theme toggle needs to be re-attached if authContainer is overwritten
+    $('#themeToggle').addEventListener('click', toggleTheme);
 
     // Toggle visibility of controls based on role
     const canCreate = hasPermission('editor');
@@ -357,7 +357,6 @@ function updateUIVisibility() {
       resetForm(); // Hide form if user logs out while it's open
     }
     
-    // Rerender cards to show/hide edit/delete buttons
     renderContentCards();
 }
 
