@@ -39,14 +39,14 @@
     .scrollbar-thin::-webkit-scrollbar{height:6px;width:6px}
     .scrollbar-thin::-webkit-scrollbar-thumb{background:rgba(0,0,0,.25);border-radius:9999px}
     /* Cursor Tubes Canvas */
-    #tubeCanvas{
-      position: fixed;
-      inset: 0;
-      width: 100vw;
-      height: 100vh;
-      pointer-events: none;
-      z-index: 0;
-    }
+    #tubeCanvas {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: -1;  /* 👈 force it below all other elements */
+}
   </style>
 </head>
 <body class="bg-background-light dark:bg-background-dark font-display text-content-light dark:text-content-dark">
