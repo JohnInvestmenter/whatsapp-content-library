@@ -411,7 +411,7 @@
 
     function drawAuroraBlob(p, i, t, time) {
       // Smaller base radius
-      const base = 90 * (1 - t) + 12;
+      const base = 12 * (1 - t) + 12;
       const speed = Math.min(1.4, Math.hypot(p.vx, p.vy) * 0.22);
       const angle = Math.atan2(p.vy, p.vx) || 0;
 
