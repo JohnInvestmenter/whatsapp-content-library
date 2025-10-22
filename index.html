@@ -8,7 +8,6 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
-    /* ---------- THEMES (light/dark) ---------- */
     :root{
       --ink:#0b0b0c; --fg:#0b0b0c; --muted:#f4f5f7; --muted-ink:#6b7280;
       --brand:#d6b160; --brand-ink:#000; --chip:#0f766e; --chip-ink:#ecfeff;
@@ -102,7 +101,7 @@
     </section>
   </div>
 
-  <!-- EDIT MODAL (unchanged from last working build) -->
+  <!-- EDIT MODAL -->
   <div id="editModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50">
     <div class="card w-full max-w-2xl rounded-xl shadow-soft flex flex-col max-h-[90vh]">
       <div class="flex items-center justify-between p-4 border-b border-[var(--border)]">
@@ -151,7 +150,7 @@
     </div>
   </div>
 
-  <!-- ADD CONTENT MODAL (restored) -->
+  <!-- ADD CONTENT MODAL -->
   <div id="addModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50">
     <div class="card w-full max-w-2xl rounded-xl shadow-soft flex flex-col max-h-[90vh]">
       <div class="flex items-center justify-between p-4 border-b border-[var(--border)]">
@@ -176,7 +175,6 @@
           <input id="tagsInput" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent" placeholder="motivation, weekly, inspiration"/>
         </div>
 
-        <!-- Uploads -->
         <div>
           <label class="block text-sm mb-2">Attachments (image / video / pdf / doc)</label>
           <input id="fileInput" type="file" class="hidden" multiple/>
@@ -186,7 +184,6 @@
           <p class="text-xs text-[var(--muted-ink)] mt-1">Files are uploaded to Drive; links are saved with the content.</p>
         </div>
 
-        <!-- WhatsApp preview -->
         <div>
           <label class="block text-sm mb-1">WhatsApp Preview</label>
           <div class="rounded-lg border border-[var(--border)] bg-[var(--muted)] p-2">
@@ -217,7 +214,6 @@
   /* ====== STATE ====== */
   lucide.createIcons();
   let contents = [];
-  // view state
   let density = localStorage.getItem('density') || 'comfortable';
   let pageSize = Number(localStorage.getItem('pageSize') || '24');
   let page = 1;
@@ -265,7 +261,7 @@
     const r = await fetch(DRIVE_APP_SCRIPT, { method:'POST', body: JSON.stringify({ action:'rename', fileId, newName }) });
     const j = await r.json();
     if(!r.ok || !j.success){ throw new Error(j.error || 'Rename failed'); }
-    return j.file; // {id, name, url}
+    return j.file;
   }
 
   /* ====== RENDER ====== */
@@ -286,10 +282,12 @@
     const start = (page-1)*pageSize;
     const slice = filtered.slice(start, start+pageSize);
 
-    grid.innerHTML = slice.map(c => {
-      const waText = c.formattedContent || toWhatsApp(c.content || '');
-      const waHTML = whatsappPreviewHTML(waText);
-      const comfy = density === 'comfortable';
+    grid.innerHTML = slice.map((c,i) => {
+      const waText  = c.formattedContent || toWhatsApp(c.content || '');
+      const waHTML  = whatsappPreviewHTML(waText);
+      const bubbleId = `wa-text-${escapeHtml(c.id ?? `${start + i}`)}`;
+      const comfy   = density === 'comfortable';
+
       return `
       <div class="h-full">
         <div class="card rounded-xl shadow-soft flex flex-col ${comfy ? 'p-4 h-[420px]' : 'p-3 h-[360px]'}">
@@ -302,15 +300,12 @@
               </div>
             </div>
             <div class="flex gap-2">
-  <button class="btn editBtn" data-id="${escapeHtml(c.id||'')}"><i data-lucide="edit-3"></i> <span class="hidden md:inline">Edit</span></button>
-  <button class="btn copyBtn" data-id="${escapeHtml(c.id||'')}"><i data-lucide="copy"></i> <span class="hidden md:inline">Copy</span></button>
-
-  <!-- NEW: per-card WhatsApp button -->
-  <button class="btn wa-send-btn"
-          data-wa-target="#wa-text-${escapeHtml(c.id||'')}">
-    <i data-lucide="send"></i> <span class="hidden md:inline">WhatsApp</span>
-  </button>
-</div>
+              <button class="btn editBtn" data-id="${escapeHtml(c.id||'')}"><i data-lucide="edit-3"></i> <span class="hidden md:inline">Edit</span></button>
+              <button class="btn copyBtn" data-id="${escapeHtml(c.id||'')}"><i data-lucide="copy"></i> <span class="hidden md:inline">Copy</span></button>
+              <button class="btn wa-send-btn" data-wa-target="#${bubbleId}">
+                <i data-lucide="send"></i> <span class="hidden md:inline">WhatsApp</span>
+              </button>
+            </div>
           </div>
 
           ${(c.attachments&&c.attachments.length) ? `
@@ -322,13 +317,12 @@
 
           <div class="mt-3 flex-1 min-h-0 rounded-lg border border-[var(--border)] bg-[var(--muted)] overflow-hidden">
             <div class="h-full overflow-auto ${comfy?'p-3 text-sm':'p-2 text-[13px]'} scrollbar-thin">
-              <div id="wa-text-${escapeHtml(c.id||'')}"
-     class="wa-bubble whitespace-pre-wrap w-full"
-     data-wa-text
-     data-wa-raw="${escapeHtml(waText).replaceAll('"','&quot;')}">
-  ${waHTML}
-</div>
-
+              <div id="${bubbleId}"
+                   class="wa-bubble whitespace-pre-wrap w-full"
+                   data-wa-text
+                   data-wa-raw="${escapeHtml(waText).replaceAll('"','&quot;')}">
+                ${waHTML}
+              </div>
             </div>
           </div>
 
@@ -350,17 +344,6 @@
     document.querySelectorAll('.editBtn').forEach(btn=>{
       btn.addEventListener('click', ()=> openEditModal(btn.getAttribute('data-id')));
     });
-    // NEW: WhatsApp button handler (opens modal with this card's text)
-document.querySelectorAll('.wa-send-btn').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    const sel = btn.getAttribute('data-wa-target');
-    const el  = sel ? document.querySelector(sel) : null;
-    const raw = el?.getAttribute('data-wa-raw') || el?.innerText?.trim() || '';
-    // use the single modal defined at bottom
-    openModal(raw);
-  });
-});
-
 
     document.getElementById('statTotal').textContent = contents.length;
     document.getElementById('statUses').textContent = contents.reduce((a,c)=>a+(c.useCount||0),0);
@@ -380,10 +363,8 @@ document.querySelectorAll('.wa-send-btn').forEach(btn=>{
     const current = sel.value || 'all';
     sel.innerHTML = '<option value="all">All Categories</option>' + categories.map(c=>`<option value="${c}">${c}</option>`).join('');
     sel.value = current;
-    const editSel = document.getElementById('editCategory');
-    editSel.innerHTML = categories.map(c=>`<option value="${c}">${c}</option>`).join('');
-    const addSel = document.getElementById('categoryInput');
-    addSel.innerHTML = categories.map(c=>`<option value="${c}">${c}</option>`).join('');
+    document.getElementById('editCategory').innerHTML = categories.map(c=>`<option value="${c}">${c}</option>`).join('');
+    document.getElementById('categoryInput').innerHTML = categories.map(c=>`<option value="${c}">${c}</option>`).join('');
   }
 
   async function copyToClipboard(id){
@@ -483,7 +464,7 @@ document.querySelectorAll('.wa-send-btn').forEach(btn=>{
     finally{ editSave.disabled=false; editSaveText.textContent='Save changes'; editSpinner.classList.add('hidden'); }
   });
 
-  /* ====== ADD MODAL (uploads w/ disable Save) ====== */
+  /* ====== ADD MODAL ====== */
   const addModal = document.getElementById('addModal');
   const addClose = document.getElementById('addClose');
   const cancelAdd = document.getElementById('cancelAdd');
@@ -578,7 +559,7 @@ document.querySelectorAll('.wa-send-btn').forEach(btn=>{
   }
 
   saveAdd.addEventListener('click', async ()=>{
-    if(inflightUploads>0) return; // guarded anyway by disabled state
+    if(inflightUploads>0) return;
     try{
       saveAdd.disabled = true; saveAddText.textContent='Saving…'; saveSpinner.classList.remove('hidden');
       const payload = {
@@ -645,128 +626,7 @@ document.querySelectorAll('.wa-send-btn').forEach(btn=>{
   });
 </script>
 
-  <!-- Modal -->
-<div id="wa-send-modal" style="position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.5);z-index:9999">
-  <div style="background:#fff;border-radius:12px;max-width:420px;width:92%;padding:18px 16px;font-family:system-ui, -apple-system, Segoe UI, Roboto;">
-    <h3 style="margin:0 0 12px;font-size:18px;font-weight:700">Send via WhatsApp</h3>
-    <label style="display:block;font-size:13px;margin-bottom:6px;">Phone number (international, e.g. 9715XXXXXXXX)</label>
-    <input id="wa-phone" type="tel" placeholder="9715XXXXXXXX"
-           style="width:100%;padding:10px 12px;border:1px solid #E5E7EB;border-radius:8px;margin-bottom:10px;outline:none;">
-    <label style="display:block;font-size:13px;margin-bottom:6px;">Message</label>
-    <textarea id="wa-text" rows="6"
-              style="width:100%;padding:10px 12px;border:1px solid #E5E7EB;border-radius:8px;resize:vertical"></textarea>
-    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
-      <button id="wa-cancel" type="button"
-              style="padding:8px 12px;border:1px solid #E5E7EB;border-radius:8px;background:#fff">Cancel</button>
-      <button id="wa-send" type="button"
-              style="padding:8px 12px;border-radius:8px;background:#16a34a;color:#fff">Send</button>
-    </div>
-  </div>
-</div>
-
-<script>
-(() => {
-  // ===== Helpers =====
-  const $ = (s, r = document) => r.querySelector(s);
-  const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
-
-  // 1) Find each card and inject a "Send" button.
-  //    Adjust the selector to your card element if needed:
-  const cards = $$(".card, [data-card], .rounded-2xl"); // try common wrappers
-  // More reliable: mark the text container yourself with data-wa-text on the element with the green box.
-  // Example: <div class="message" data-wa-text> ... </div>
-
-  function extractTextFromCard(card) {
-    // Priority 1: a dedicated element marked as data-wa-text
-    const marked = card.querySelector("[data-wa-text]");
-    if (marked) return marked.innerText.trim();
-
-    // Priority 2: text bubble-like container within the card
-    const guess = card.querySelector(".message, [class*='bg-'][class*='green'], .prose, blockquote, .whatsapp-text");
-    if (guess) return guess.innerText.trim();
-
-    // Priority 3: any paragraph(s) inside
-    const p = card.querySelectorAll("p");
-    if (p.length) return Array.from(p).map(n => n.innerText).join("\n").trim();
-
-    // Fallback: whole card text (can be noisy)
-    return card.innerText.trim();
-  }
-
-  function addSendButtonToCard(card) {
-    // Insert next to your existing "Copy" button if present
-    const copyBtn = card.querySelector("button, .copy, [data-copy]");
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "send-btn";
-    btn.textContent = "Send";
-    btn.style = "margin-left:8px;padding:6px 10px;border:1px solid #E5E7EB;border-radius:8px;background:#fff;cursor:pointer";
-    btn.addEventListener("click", () => openModalWithText(extractTextFromCard(card)));
-    if (copyBtn && copyBtn.parentElement) {
-      copyBtn.parentElement.appendChild(btn);
-    } else {
-      // else drop at card footer/top
-      card.appendChild(btn);
-    }
-  }
-
-  cards.forEach(addSendButtonToCard);
-
-  // ===== Modal logic =====
-  const modal = $("#wa-send-modal");
-  const phoneInput = $("#wa-phone");
-  const textArea = $("#wa-text");
-  const cancelBtn = $("#wa-cancel");
-  const sendBtn = $("#wa-send");
-
-  function openModalWithText(text) {
-    textArea.value = text || "";
-    phoneInput.value = "";
-    modal.style.display = "flex";
-    setTimeout(() => phoneInput.focus(), 0);
-  }
-
-  function closeModal() {
-    modal.style.display = "none";
-  }
-
-  cancelBtn.addEventListener("click", closeModal);
-  modal.addEventListener("click", (e) => {
-    if (e.target === modal) closeModal();
-  });
-
-  async function sendWhatsApp(to, text) {
-    const r = await fetch("/api/send-whatsapp", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ to, text })
-    });
-    const data = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(data?.error || "Send failed");
-    return data;
-  }
-
-  sendBtn.addEventListener("click", async () => {
-    const to = phoneInput.value.trim();
-    const text = textArea.value.trim();
-    if (!to || !text) { alert("Enter phone number and message."); return; }
-
-    sendBtn.disabled = true; sendBtn.textContent = "Sending…";
-    try {
-      await sendWhatsApp(to, text);
-      alert("Sent ✅");
-      closeModal();
-    } catch (err) {
-      console.error(err);
-      alert("Failed to send. Check number format and server logs.");
-    } finally {
-      sendBtn.disabled = false; sendBtn.textContent = "Send";
-    }
-  });
-})();
-</script>
-
-<!-- WhatsApp modal (once) -->
+<!-- Single WhatsApp modal -->
 <div id="wa-modal"
      style="position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.5);z-index:9999">
   <div style="background:#fff;border-radius:12px;max-width:420px;width:92%;padding:18px 16px;font-family:system-ui,-apple-system,Segoe UI,Roboto">
@@ -790,21 +650,16 @@ document.querySelectorAll('.wa-send-btn').forEach(btn=>{
 </div>
 
 <script>
-// ===== Helpers =====
+/* ===== WhatsApp modal logic (single instance) ===== */
 const $  = (s, r=document) => r.querySelector(s);
-const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
-
 const modal      = $("#wa-modal");
 const phoneInput = $("#wa-phone");
 const textArea   = $("#wa-text");
 const btnCancel  = $("#wa-cancel");
 const btnSend    = $("#wa-send");
 
-let _currentText = "";
-
 function openModal(text) {
-  _currentText = text || "";
-  textArea.value = _currentText;
+  textArea.value = text || "";
   phoneInput.value = "";
   modal.style.display = "flex";
   setTimeout(() => phoneInput.focus(), 0);
@@ -814,18 +669,17 @@ function closeModal(){ modal.style.display = "none"; }
 btnCancel.addEventListener("click", closeModal);
 modal.addEventListener("click", (e)=>{ if(e.target===modal) closeModal(); });
 
-// Single delegated listener so we never double-bind, even after render()
+// Delegated click handler for all per-card WhatsApp buttons
 document.getElementById('contentGrid').addEventListener('click', (e) => {
   const btn = e.target.closest('.wa-send-btn');
   if (!btn) return;
   const target = btn.getAttribute('data-wa-target');
   const el = target ? document.querySelector(target) : btn.closest('.card')?.querySelector('[data-wa-text]');
-  const text = el ? el.innerText.trim() : '';
+  const text = el?.getAttribute('data-wa-raw') || el?.innerText?.trim() || '';
   openModal(text);
 });
 
-
-// ===== Sender =====
+// Sender — calls your Vercel API
 async function sendWhatsApp(to, text) {
   const r = await fetch("/api/send-whatsapp", {
     method: "POST",
@@ -837,24 +691,21 @@ async function sendWhatsApp(to, text) {
   try { return JSON.parse(raw); } catch { return { ok:true, raw }; }
 }
 
-// Ensure only one handler, and block accidental double-clicks
+// Deduped + re-entry safe click handler
 if (btnSend._handler) {
   btnSend.removeEventListener('click', btnSend._handler);
 }
-
 btnSend._handler = async () => {
   const digits = phoneInput.value.replace(/\D/g, "");
   const text   = textArea.value.trim();
-
   if (!digits) { alert("Enter phone number in international format (digits only)."); return; }
   if (!text)   { alert("Message is empty."); return; }
 
-  if (btnSend.dataset.busy === "1") return;   // re-entry guard
+  if (btnSend.dataset.busy === "1") return;
   btnSend.dataset.busy = "1";
 
   btnSend.disabled = true;
   btnSend.textContent = "Sending…";
-
   try {
     await sendWhatsApp(digits, text);
     alert("Sent ✅");
@@ -868,11 +719,8 @@ btnSend._handler = async () => {
     btnSend.dataset.busy = "0";
   }
 };
-
 btnSend.addEventListener('click', btnSend._handler);
-
 </script>
 
-  
 </body>
 </html>
