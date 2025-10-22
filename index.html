@@ -302,9 +302,15 @@
               </div>
             </div>
             <div class="flex gap-2">
-              <button class="btn editBtn" data-id="${escapeHtml(c.id||'')}"><i data-lucide="edit-3"></i> <span class="hidden md:inline">Edit</span></button>
-              <button class="btn copyBtn" data-id="${escapeHtml(c.id||'')}"><i data-lucide="copy"></i> <span class="hidden md:inline">Copy</span></button>
-            </div>
+  <button class="btn editBtn" data-id="${escapeHtml(c.id||'')}"><i data-lucide="edit-3"></i> <span class="hidden md:inline">Edit</span></button>
+  <button class="btn copyBtn" data-id="${escapeHtml(c.id||'')}"><i data-lucide="copy"></i> <span class="hidden md:inline">Copy</span></button>
+
+  <!-- NEW: per-card WhatsApp button -->
+  <button class="btn wa-send-btn"
+          data-wa-target="#wa-text-${escapeHtml(c.id||'')}">
+    <i data-lucide="send"></i> <span class="hidden md:inline">WhatsApp</span>
+  </button>
+</div>
           </div>
 
           ${(c.attachments&&c.attachments.length) ? `
@@ -316,7 +322,13 @@
 
           <div class="mt-3 flex-1 min-h-0 rounded-lg border border-[var(--border)] bg-[var(--muted)] overflow-hidden">
             <div class="h-full overflow-auto ${comfy?'p-3 text-sm':'p-2 text-[13px]'} scrollbar-thin">
-              <div class="wa-bubble whitespace-pre-wrap w-full">${waHTML}</div>
+              <div id="wa-text-${escapeHtml(c.id||'')}"
+     class="wa-bubble whitespace-pre-wrap w-full"
+     data-wa-text
+     data-wa-raw="${escapeHtml(waText).replaceAll('"','&quot;')}">
+  ${waHTML}
+</div>
+
             </div>
           </div>
 
@@ -338,6 +350,17 @@
     document.querySelectorAll('.editBtn').forEach(btn=>{
       btn.addEventListener('click', ()=> openEditModal(btn.getAttribute('data-id')));
     });
+    // NEW: WhatsApp button handler (opens modal with this card's text)
+document.querySelectorAll('.wa-send-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const sel = btn.getAttribute('data-wa-target');
+    const el  = sel ? document.querySelector(sel) : null;
+    const raw = el?.getAttribute('data-wa-raw') || el?.innerText?.trim() || '';
+    // use the single modal defined at bottom
+    openModal(raw);
+  });
+});
+
 
     document.getElementById('statTotal').textContent = contents.length;
     document.getElementById('statUses').textContent = contents.reduce((a,c)=>a+(c.useCount||0),0);
