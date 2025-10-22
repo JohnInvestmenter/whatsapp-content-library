@@ -814,16 +814,16 @@ function closeModal(){ modal.style.display = "none"; }
 btnCancel.addEventListener("click", closeModal);
 modal.addEventListener("click", (e)=>{ if(e.target===modal) closeModal(); });
 
-// ===== Attach to each per-card button =====
-// Button must have [data-wa-target="#id-of-text-element"]
-$$(".wa-send-btn").forEach(btn => {
-  btn.addEventListener("click", () => {
-    const target = btn.getAttribute("data-wa-target");
-    const el = target ? document.querySelector(target) : btn.closest(".card")?.querySelector("[data-wa-text]");
-    const text = el ? el.innerText.trim() : "";
-    openModal(text);
-  });
+// Single delegated listener so we never double-bind, even after render()
+document.getElementById('contentGrid').addEventListener('click', (e) => {
+  const btn = e.target.closest('.wa-send-btn');
+  if (!btn) return;
+  const target = btn.getAttribute('data-wa-target');
+  const el = target ? document.querySelector(target) : btn.closest('.card')?.querySelector('[data-wa-text]');
+  const text = el ? el.innerText.trim() : '';
+  openModal(text);
 });
+
 
 // ===== Sender =====
 async function sendWhatsApp(to, text) {
@@ -837,25 +837,40 @@ async function sendWhatsApp(to, text) {
   try { return JSON.parse(raw); } catch { return { ok:true, raw }; }
 }
 
-btnSend.addEventListener("click", async () => {
-  const digits = phoneInput.value.replace(/\D/g,"");
-  const text = textArea.value.trim();
+// Ensure only one handler, and block accidental double-clicks
+if (btnSend._handler) {
+  btnSend.removeEventListener('click', btnSend._handler);
+}
+
+btnSend._handler = async () => {
+  const digits = phoneInput.value.replace(/\D/g, "");
+  const text   = textArea.value.trim();
 
   if (!digits) { alert("Enter phone number in international format (digits only)."); return; }
   if (!text)   { alert("Message is empty."); return; }
 
-  btnSend.disabled = true; btnSend.textContent = "Sending…";
+  if (btnSend.dataset.busy === "1") return;   // re-entry guard
+  btnSend.dataset.busy = "1";
+
+  btnSend.disabled = true;
+  btnSend.textContent = "Sending…";
+
   try {
     await sendWhatsApp(digits, text);
     alert("Sent ✅");
     closeModal();
   } catch (err) {
     console.error(err);
-    alert(String(err.message || err));
+    alert(String(err?.message || err));
   } finally {
-    btnSend.disabled = false; btnSend.textContent = "Send";
+    btnSend.disabled = false;
+    btnSend.textContent = "Send";
+    btnSend.dataset.busy = "0";
   }
-});
+};
+
+btnSend.addEventListener('click', btnSend._handler);
+
 </script>
 
   
