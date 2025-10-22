@@ -621,5 +621,127 @@
     syncContents();
   });
 </script>
+
+  <!-- Modal -->
+<div id="wa-send-modal" style="position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.5);z-index:9999">
+  <div style="background:#fff;border-radius:12px;max-width:420px;width:92%;padding:18px 16px;font-family:system-ui, -apple-system, Segoe UI, Roboto;">
+    <h3 style="margin:0 0 12px;font-size:18px;font-weight:700">Send via WhatsApp</h3>
+    <label style="display:block;font-size:13px;margin-bottom:6px;">Phone number (international, e.g. 9715XXXXXXXX)</label>
+    <input id="wa-phone" type="tel" placeholder="9715XXXXXXXX"
+           style="width:100%;padding:10px 12px;border:1px solid #E5E7EB;border-radius:8px;margin-bottom:10px;outline:none;">
+    <label style="display:block;font-size:13px;margin-bottom:6px;">Message</label>
+    <textarea id="wa-text" rows="6"
+              style="width:100%;padding:10px 12px;border:1px solid #E5E7EB;border-radius:8px;resize:vertical"></textarea>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+      <button id="wa-cancel" type="button"
+              style="padding:8px 12px;border:1px solid #E5E7EB;border-radius:8px;background:#fff">Cancel</button>
+      <button id="wa-send" type="button"
+              style="padding:8px 12px;border-radius:8px;background:#16a34a;color:#fff">Send</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  // ===== Helpers =====
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+
+  // 1) Find each card and inject a "Send" button.
+  //    Adjust the selector to your card element if needed:
+  const cards = $$(".card, [data-card], .rounded-2xl"); // try common wrappers
+  // More reliable: mark the text container yourself with data-wa-text on the element with the green box.
+  // Example: <div class="message" data-wa-text> ... </div>
+
+  function extractTextFromCard(card) {
+    // Priority 1: a dedicated element marked as data-wa-text
+    const marked = card.querySelector("[data-wa-text]");
+    if (marked) return marked.innerText.trim();
+
+    // Priority 2: text bubble-like container within the card
+    const guess = card.querySelector(".message, [class*='bg-'][class*='green'], .prose, blockquote, .whatsapp-text");
+    if (guess) return guess.innerText.trim();
+
+    // Priority 3: any paragraph(s) inside
+    const p = card.querySelectorAll("p");
+    if (p.length) return Array.from(p).map(n => n.innerText).join("\n").trim();
+
+    // Fallback: whole card text (can be noisy)
+    return card.innerText.trim();
+  }
+
+  function addSendButtonToCard(card) {
+    // Insert next to your existing "Copy" button if present
+    const copyBtn = card.querySelector("button, .copy, [data-copy]");
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "send-btn";
+    btn.textContent = "Send";
+    btn.style = "margin-left:8px;padding:6px 10px;border:1px solid #E5E7EB;border-radius:8px;background:#fff;cursor:pointer";
+    btn.addEventListener("click", () => openModalWithText(extractTextFromCard(card)));
+    if (copyBtn && copyBtn.parentElement) {
+      copyBtn.parentElement.appendChild(btn);
+    } else {
+      // else drop at card footer/top
+      card.appendChild(btn);
+    }
+  }
+
+  cards.forEach(addSendButtonToCard);
+
+  // ===== Modal logic =====
+  const modal = $("#wa-send-modal");
+  const phoneInput = $("#wa-phone");
+  const textArea = $("#wa-text");
+  const cancelBtn = $("#wa-cancel");
+  const sendBtn = $("#wa-send");
+
+  function openModalWithText(text) {
+    textArea.value = text || "";
+    phoneInput.value = "";
+    modal.style.display = "flex";
+    setTimeout(() => phoneInput.focus(), 0);
+  }
+
+  function closeModal() {
+    modal.style.display = "none";
+  }
+
+  cancelBtn.addEventListener("click", closeModal);
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) closeModal();
+  });
+
+  async function sendWhatsApp(to, text) {
+    const r = await fetch("/api/send-whatsapp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ to, text })
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data?.error || "Send failed");
+    return data;
+  }
+
+  sendBtn.addEventListener("click", async () => {
+    const to = phoneInput.value.trim();
+    const text = textArea.value.trim();
+    if (!to || !text) { alert("Enter phone number and message."); return; }
+
+    sendBtn.disabled = true; sendBtn.textContent = "Sending…";
+    try {
+      await sendWhatsApp(to, text);
+      alert("Sent ✅");
+      closeModal();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to send. Check number format and server logs.");
+    } finally {
+      sendBtn.disabled = false; sendBtn.textContent = "Send";
+    }
+  });
+})();
+</script>
+
 </body>
 </html>
