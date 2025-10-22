@@ -2,12 +2,13 @@
 <html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>InvestMenter – WhatsApp Content Library</title>
   <link rel="icon" href="https://onecdn.io/media/ffb500c6-8305-4802-8cf9-6b55e6bd5ed5/md2x" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
+    /* ---------- THEME ---------- */
     :root{
       --ink:#0b0b0c; --fg:#0b0b0c; --muted:#f4f5f7; --muted-ink:#6b7280;
       --brand:#d6b160; --brand-ink:#000; --chip:#0f766e; --chip-ink:#ecfeff;
@@ -42,27 +43,10 @@
       background:transparent; border:1px solid var(--border); border-radius:6px; padding:1px 4px;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size:.875em;
     }
-    /* Compact buttons for card footer */
-.btn-sm{
-  padding:.35rem .55rem;
-  border-radius:.6rem;
-  font-size:12px;
-  gap:.35rem;
-  line-height:1;
-}
-.btn-xs{
-  padding:.25rem .45rem;
-  border-radius:.5rem;
-  font-size:11px;
-  gap:.3rem;
-  line-height:1;
-}
-/* make lucide icons smaller inside compact buttons */
-.btn-sm .lucide,
-.btn-xs .lucide{
-  width:16px; height:16px;
-}
-
+    /* ---------- compact buttons ---------- */
+    .btn-sm{ padding:.35rem .55rem; border-radius:.6rem; font-size:12px; gap:.35rem; line-height:1; }
+    .btn-xs{ padding:.25rem .45rem; border-radius:.5rem; font-size:11px; gap:.3rem; line-height:1; }
+    .btn-sm .lucide, .btn-xs .lucide{ width:16px; height:16px; }
   </style>
 </head>
 <body class="min-h-screen p-6">
