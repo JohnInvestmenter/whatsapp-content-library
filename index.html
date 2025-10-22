@@ -743,5 +743,98 @@
 })();
 </script>
 
+<!-- WhatsApp modal (once) -->
+<div id="wa-modal"
+     style="position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.5);z-index:9999">
+  <div style="background:#fff;border-radius:12px;max-width:420px;width:92%;padding:18px 16px;font-family:system-ui,-apple-system,Segoe UI,Roboto">
+    <h3 style="margin:0 0 12px;font-size:18px;font-weight:700">Send via WhatsApp</h3>
+
+    <label style="display:block;font-size:13px;margin:8px 0 6px;">Phone number (international, digits only)</label>
+    <input id="wa-phone" type="tel" placeholder="9715XXXXXXXX"
+           style="width:100%;padding:10px 12px;border:1px solid #E5E7EB;border-radius:8px;outline:none">
+
+    <label style="display:block;font-size:13px;margin:12px 0 6px;">Message</label>
+    <textarea id="wa-text" rows="6"
+              style="width:100%;padding:10px 12px;border:1px solid #E5E7EB;border-radius:8px;resize:vertical"></textarea>
+
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+      <button id="wa-cancel" type="button"
+              style="padding:8px 12px;border:1px solid #E5E7EB;border-radius:8px;background:#fff">Cancel</button>
+      <button id="wa-send" type="button"
+              style="padding:8px 12px;border-radius:8px;background:#16a34a;color:#fff">Send</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== Helpers =====
+const $  = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
+
+const modal      = $("#wa-modal");
+const phoneInput = $("#wa-phone");
+const textArea   = $("#wa-text");
+const btnCancel  = $("#wa-cancel");
+const btnSend    = $("#wa-send");
+
+let _currentText = "";
+
+function openModal(text) {
+  _currentText = text || "";
+  textArea.value = _currentText;
+  phoneInput.value = "";
+  modal.style.display = "flex";
+  setTimeout(() => phoneInput.focus(), 0);
+}
+function closeModal(){ modal.style.display = "none"; }
+
+btnCancel.addEventListener("click", closeModal);
+modal.addEventListener("click", (e)=>{ if(e.target===modal) closeModal(); });
+
+// ===== Attach to each per-card button =====
+// Button must have [data-wa-target="#id-of-text-element"]
+$$(".wa-send-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const target = btn.getAttribute("data-wa-target");
+    const el = target ? document.querySelector(target) : btn.closest(".card")?.querySelector("[data-wa-text]");
+    const text = el ? el.innerText.trim() : "";
+    openModal(text);
+  });
+});
+
+// ===== Sender =====
+async function sendWhatsApp(to, text) {
+  const r = await fetch("/api/send-whatsapp", {
+    method: "POST",
+    headers: { "Content-Type":"application/json" },
+    body: JSON.stringify({ to, text })
+  });
+  const raw = await r.text();
+  if(!r.ok) throw new Error(`HTTP ${r.status}: ${raw}`);
+  try { return JSON.parse(raw); } catch { return { ok:true, raw }; }
+}
+
+btnSend.addEventListener("click", async () => {
+  const digits = phoneInput.value.replace(/\D/g,"");
+  const text = textArea.value.trim();
+
+  if (!digits) { alert("Enter phone number in international format (digits only)."); return; }
+  if (!text)   { alert("Message is empty."); return; }
+
+  btnSend.disabled = true; btnSend.textContent = "Sending…";
+  try {
+    await sendWhatsApp(digits, text);
+    alert("Sent ✅");
+    closeModal();
+  } catch (err) {
+    console.error(err);
+    alert(String(err.message || err));
+  } finally {
+    btnSend.disabled = false; btnSend.textContent = "Send";
+  }
+});
+</script>
+
+  
 </body>
 </html>
