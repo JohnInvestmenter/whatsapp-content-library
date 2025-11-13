@@ -24,14 +24,21 @@
       --prompt:#1a1f2e; --prompt-ink:#e5e7eb;
     }
     body{ background:var(--bg); color:var(--fg); }
-    .card{ background:var(--card); border:1px solid var(--border); }
-    .chip{ border-radius:9999px; padding:2px 8px; font-size:12px }
-    .btn{ display:inline-flex; align-items:center; gap:.5rem; border:1px solid var(--border); padding:.55rem .8rem; border-radius:.75rem; cursor:pointer; }
-    .btn:hover:not([disabled]){ background:rgba(255,255,255,.06) }
+    .card{ background:var(--card); border:1px solid var(--border); transition:all .3s ease; }
+    .card:hover{ transform:translateY(-4px); box-shadow:0 12px 40px rgba(0,0,0,.15); }
+    [data-theme="dark"] .card:hover{ box-shadow:0 12px 40px rgba(0,0,0,.4); }
+    .chip{ border-radius:9999px; padding:2px 8px; font-size:12px; transition:all .2s ease; }
+    .chip:hover{ transform:scale(1.05); }
+    .btn{ display:inline-flex; align-items:center; gap:.5rem; border:1px solid var(--border); padding:.55rem .8rem; border-radius:.75rem; cursor:pointer; position:relative; overflow:hidden; transition:all .2s ease; }
+    .btn:hover:not([disabled]){ background:rgba(255,255,255,.06); transform:translateY(-1px); }
     [data-theme="light"] .btn:hover:not([disabled]){ background:rgba(0,0,0,.04) }
+    .btn:active:not([disabled]){ transform:translateY(0); }
     .btn-brand{ background:var(--brand); color:var(--brand-ink); border-color:transparent; }
-    .btn-brand:hover:not([disabled]){ filter:brightness(.95) }
+    .btn-brand:hover:not([disabled]){ filter:brightness(.95); box-shadow:0 4px 12px rgba(214,177,96,.3); }
     .btn[disabled]{ opacity:.6; cursor:not-allowed; }
+    @keyframes ripple{ 0%{transform:scale(0);opacity:1} 100%{transform:scale(4);opacity:0} }
+    .btn::after{ content:''; position:absolute; width:100%; height:100%; background:rgba(255,255,255,.3); border-radius:50%; transform:scale(0); pointer-events:none; }
+    .btn:active::after{ animation:ripple .6s ease-out; }
     .shadow-soft{ box-shadow:0 8px 30px rgba(0,0,0,.12) }
     [data-theme="dark"] .shadow-soft{ box-shadow:0 8px 30px rgba(0,0,0,.35) }
     .scrollbar-thin{ scrollbar-width: thin; }
@@ -57,15 +64,101 @@
     .tab.active{ border-bottom-color:var(--brand); font-weight:600; }
     .hidden{ display:none !important; }
     /* ---------- TUTORIAL ---------- */
-    .tutorial-overlay{ position:fixed; inset:0; background:rgba(0,0,0,.85); z-index:9999; display:none; }
+    .tutorial-overlay{ position:fixed; inset:0; background:rgba(0,0,0,.65); z-index:9999; display:none; }
     .tutorial-overlay.active{ display:block; }
-    .tutorial-highlight{ position:absolute; box-shadow:0 0 0 9999px rgba(0,0,0,.85); border:3px solid var(--brand); border-radius:12px; z-index:10000; transition:all .3s ease; pointer-events:none; }
+    .tutorial-highlight{ position:absolute; box-shadow:0 0 0 9999px rgba(0,0,0,.65); border:3px solid var(--brand); border-radius:12px; z-index:10000; transition:all .3s ease; pointer-events:none; }
     .tutorial-tooltip{ position:absolute; background:var(--card); border:2px solid var(--brand); border-radius:12px; padding:20px; max-width:400px; z-index:10001; box-shadow:0 10px 40px rgba(0,0,0,.3); }
     .tutorial-arrow{ position:absolute; width:0; height:0; border:12px solid transparent; }
     .tutorial-arrow.top{ border-bottom-color:var(--brand); top:-24px; left:50%; transform:translateX(-50%); }
     .tutorial-arrow.bottom{ border-top-color:var(--brand); bottom:-24px; left:50%; transform:translateX(-50%); }
     .tutorial-arrow.left{ border-right-color:var(--brand); left:-24px; top:50%; transform:translateY(-50%); }
     .tutorial-arrow.right{ border-left-color:var(--brand); right:-24px; top:50%; transform:translateY(-50%); }
+    /* ---------- TOAST NOTIFICATIONS ---------- */
+    .toast-container{ position:fixed; top:20px; right:20px; z-index:99999; display:flex; flex-direction:column; gap:10px; pointer-events:none; }
+    .toast{ background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px 20px; box-shadow:0 8px 30px rgba(0,0,0,.2); display:flex; align-items:center; gap:12px; min-width:300px; max-width:400px; pointer-events:auto; transform:translateX(500px); animation:slideIn .3s ease forwards; }
+    @keyframes slideIn{ to{transform:translateX(0)} }
+    @keyframes slideOut{ to{transform:translateX(500px);opacity:0} }
+    .toast.hiding{ animation:slideOut .3s ease forwards; }
+    .toast-success{ border-left:4px solid #10b981; }
+    .toast-error{ border-left:4px solid #ef4444; }
+    .toast-info{ border-left:4px solid #3b82f6; }
+    .toast-icon{ width:24px; height:24px; flex-shrink:0; }
+    .toast-success .toast-icon{ color:#10b981; }
+    .toast-error .toast-icon{ color:#ef4444; }
+    .toast-info .toast-icon{ color:#3b82f6; }
+    .toast-content{ flex:1; }
+    .toast-title{ font-weight:600; margin-bottom:2px; }
+    .toast-message{ font-size:14px; opacity:.8; }
+    .toast-close{ cursor:pointer; opacity:.5; transition:opacity .2s; }
+    .toast-close:hover{ opacity:1; }
+    /* ---------- LOADING SKELETON ---------- */
+    .skeleton{ background:linear-gradient(90deg,var(--muted) 25%,var(--border) 50%,var(--muted) 75%); background-size:200% 100%; animation:shimmer 1.5s infinite; border-radius:8px; }
+    @keyframes shimmer{ 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+    .skeleton-card{ height:420px; }
+    .skeleton-line{ height:16px; margin:8px 0; }
+    .skeleton-circle{ border-radius:50%; width:40px; height:40px; }
+    /* ---------- EMPTY STATE ---------- */
+    .empty-state{ text-align:center; padding:60px 20px; opacity:.6; }
+    .empty-state-icon{ font-size:64px; margin-bottom:20px; opacity:.3; }
+    .empty-state-title{ font-size:20px; font-weight:600; margin-bottom:8px; }
+    .empty-state-text{ font-size:14px; margin-bottom:20px; }
+    /* ---------- CATEGORY COLORS ---------- */
+    .category-general{ background:#8b5cf6 !important; color:#fff !important; }
+    .category-motivation{ background:#f59e0b !important; color:#fff !important; }
+    .category-tech-tips{ background:#3b82f6 !important; color:#fff !important; }
+    .category-fun-facts{ background:#ec4899 !important; color:#fff !important; }
+    .category-announcements{ background:#ef4444 !important; color:#fff !important; }
+    .category-events{ background:#10b981 !important; color:#fff !important; }
+    .category-educational{ background:#06b6d4 !important; color:#fff !important; }
+    .category-sales{ background:#8b5cf6 !important; color:#fff !important; }
+    .category-marketing{ background:#f59e0b !important; color:#fff !important; }
+    .category-support{ background:#10b981 !important; color:#fff !important; }
+    .category-technical{ background:#3b82f6 !important; color:#fff !important; }
+    .category-creative{ background:#ec4899 !important; color:#fff !important; }
+    .category-analysis{ background:#06b6d4 !important; color:#fff !important; }
+    .card-border-general{ border-left:4px solid #8b5cf6 !important; }
+    .card-border-motivation{ border-left:4px solid #f59e0b !important; }
+    .card-border-tech-tips{ border-left:4px solid #3b82f6 !important; }
+    .card-border-fun-facts{ border-left:4px solid #ec4899 !important; }
+    .card-border-announcements{ border-left:4px solid #ef4444 !important; }
+    .card-border-events{ border-left:4px solid #10b981 !important; }
+    .card-border-educational{ border-left:4px solid #06b6d4 !important; }
+    .card-border-sales{ border-left:4px solid #8b5cf6 !important; }
+    .card-border-marketing{ border-left:4px solid #f59e0b !important; }
+    .card-border-support{ border-left:4px solid #10b981 !important; }
+    .card-border-technical{ border-left:4px solid #3b82f6 !important; }
+    .card-border-creative{ border-left:4px solid #ec4899 !important; }
+    .card-border-analysis{ border-left:4px solid #06b6d4 !important; }
+    /* ---------- BADGES ---------- */
+    .badge{ display:inline-flex; align-items:center; gap:4px; padding:4px 8px; border-radius:6px; font-size:11px; font-weight:600; }
+    .badge-new{ background:#10b981; color:#fff; }
+    .badge-trending{ background:#ef4444; color:#fff; animation:pulse 2s infinite; }
+    @keyframes pulse{ 0%,100%{opacity:1} 50%{opacity:.7} }
+    /* ---------- SEARCH ENHANCEMENTS ---------- */
+    .search-wrapper{ position:relative; }
+    .search-wrapper input{ padding-left:40px; }
+    .search-icon{ position:absolute; left:12px; top:50%; transform:translateY(-50%); opacity:.5; pointer-events:none; }
+    .search-clear{ position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; opacity:.5; transition:opacity .2s; }
+    .search-clear:hover{ opacity:1; }
+    /* ---------- ICON ANIMATIONS ---------- */
+    @keyframes spin{ from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+    .spin{ animation:spin 1s linear infinite; }
+    @keyframes bounce{ 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
+    .bounce{ animation:bounce .5s ease; }
+    /* ---------- STATS ANIMATIONS ---------- */
+    .stat-value{ font-size:2rem; font-weight:700; transition:all .3s ease; }
+    .stat-value:hover{ transform:scale(1.1); color:var(--brand); }
+    /* ---------- PREVIEW MODAL ---------- */
+    .preview-modal{ position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:9998; display:none; align-items:center; justify-content:center; padding:20px; }
+    .preview-modal.active{ display:flex; }
+    .preview-content{ background:var(--card); border-radius:16px; max-width:800px; width:100%; max-height:90vh; overflow:hidden; display:flex; flex-direction:column; animation:modalIn .3s ease; }
+    @keyframes modalIn{ from{transform:scale(.9);opacity:0} to{transform:scale(1);opacity:1} }
+    .preview-header{ padding:20px; border-bottom:1px solid var(--border); display:flex; justify-content:between; align-items:center; }
+    .preview-body{ padding:20px; overflow-y:auto; flex:1; }
+    .preview-footer{ padding:20px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:10px; }
+    /* ---------- FADE IN ANIMATION ---------- */
+    @keyframes fadeIn{ from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+    .fade-in{ animation:fadeIn .4s ease forwards; }
   </style>
 </head>
 <body class="min-h-screen p-6">
@@ -101,7 +194,11 @@
     <!-- Toolbar -->
     <section class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
       <div class="flex gap-2 w-full md:w-auto">
-        <input id="wa-searchInput" placeholder="Search..." class="flex-1 p-3 rounded-lg border border-[var(--border)] bg-transparent"/>
+        <div class="search-wrapper flex-1">
+          <i data-lucide="search" class="search-icon"></i>
+          <input id="wa-searchInput" placeholder="Search content..." class="w-full p-3 rounded-lg border border-[var(--border)] bg-transparent"/>
+          <i data-lucide="x" class="search-clear hidden" id="wa-searchClear"></i>
+        </div>
         <select id="wa-categorySelect" class="p-3 rounded-lg border border-[var(--border)] bg-transparent">
           <option value="all">All Categories</option>
         </select>
@@ -126,10 +223,10 @@
     <section class="card rounded-xl p-4 shadow-soft">
       <h2 class="font-semibold mb-2">Content Statistics</h2>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-        <div><div id="wa-statTotal" class="text-2xl font-bold">0</div><div class="text-sm text-[var(--muted-ink)]">Total Content</div></div>
-        <div><div id="wa-statUses" class="text-2xl font-bold">0</div><div class="text-sm text-[var(--muted-ink)]">Total Uses</div></div>
-        <div><div id="wa-statCategories" class="text-2xl font-bold">0</div><div class="text-sm text-[var(--muted-ink)]">Categories</div></div>
-        <div><div id="wa-statRecent" class="text-2xl font-bold">0</div><div class="text-sm text-[var(--muted-ink)]">Recently Used</div></div>
+        <div><div id="wa-statTotal" class="stat-value">0</div><div class="text-sm text-[var(--muted-ink)]">Total Content</div></div>
+        <div><div id="wa-statUses" class="stat-value">0</div><div class="text-sm text-[var(--muted-ink)]">Total Uses</div></div>
+        <div><div id="wa-statCategories" class="stat-value">0</div><div class="text-sm text-[var(--muted-ink)]">Categories</div></div>
+        <div><div id="wa-statRecent" class="stat-value">0</div><div class="text-sm text-[var(--muted-ink)]">Recently Used</div></div>
       </div>
     </section>
   </div>
@@ -140,7 +237,11 @@
     <!-- Toolbar -->
     <section class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
       <div class="flex gap-2 w-full md:w-auto">
-        <input id="gpt-searchInput" placeholder="Search prompts..." class="flex-1 p-3 rounded-lg border border-[var(--border)] bg-transparent"/>
+        <div class="search-wrapper flex-1">
+          <i data-lucide="search" class="search-icon"></i>
+          <input id="gpt-searchInput" placeholder="Search prompts..." class="w-full p-3 rounded-lg border border-[var(--border)] bg-transparent"/>
+          <i data-lucide="x" class="search-clear hidden" id="gpt-searchClear"></i>
+        </div>
         <select id="gpt-categorySelect" class="p-3 rounded-lg border border-[var(--border)] bg-transparent">
           <option value="all">All Categories</option>
         </select>
@@ -165,10 +266,10 @@
     <section class="card rounded-xl p-4 shadow-soft">
       <h2 class="font-semibold mb-2">Prompts Statistics</h2>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-        <div><div id="gpt-statTotal" class="text-2xl font-bold">0</div><div class="text-sm text-[var(--muted-ink)]">Total Prompts</div></div>
-        <div><div id="gpt-statUses" class="text-2xl font-bold">0</div><div class="text-sm text-[var(--muted-ink)]">Total Uses</div></div>
-        <div><div id="gpt-statCategories" class="text-2xl font-bold">0</div><div class="text-sm text-[var(--muted-ink)]">Categories</div></div>
-        <div><div id="gpt-statRecent" class="text-2xl font-bold">0</div><div class="text-sm text-[var(--muted-ink)]">Recently Used</div></div>
+        <div><div id="gpt-statTotal" class="stat-value">0</div><div class="text-sm text-[var(--muted-ink)]">Total Prompts</div></div>
+        <div><div id="gpt-statUses" class="stat-value">0</div><div class="text-sm text-[var(--muted-ink)]">Total Uses</div></div>
+        <div><div id="gpt-statCategories" class="stat-value">0</div><div class="text-sm text-[var(--muted-ink)]">Categories</div></div>
+        <div><div id="gpt-statRecent" class="stat-value">0</div><div class="text-sm text-[var(--muted-ink)]">Recently Used</div></div>
       </div>
     </section>
   </div>
@@ -286,6 +387,24 @@
   </div>
 </div>
 
+<!-- ==================== TOAST NOTIFICATIONS ==================== -->
+<div id="toastContainer" class="toast-container"></div>
+
+<!-- ==================== PREVIEW MODAL ==================== -->
+<div id="previewModal" class="preview-modal">
+  <div class="preview-content">
+    <div class="preview-header">
+      <h2 class="text-xl font-bold" id="previewTitle"></h2>
+      <button id="previewClose" class="btn btn-sm"><i data-lucide="x"></i></button>
+    </div>
+    <div class="preview-body" id="previewBody"></div>
+    <div class="preview-footer">
+      <button id="previewCopyBtn" class="btn btn-sm"><i data-lucide="copy"></i> Copy</button>
+      <button id="previewCloseBtn" class="btn btn-sm btn-brand">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- ==================== TUTORIAL ==================== -->
 <div id="tutorialOverlay" class="tutorial-overlay">
   <div id="tutorialHighlight" class="tutorial-highlight"></div>
@@ -371,17 +490,169 @@ document.getElementById('supportBtn').addEventListener('click', () => {
   window.open('https://forms.monday.com/forms/96d88197ad68bc429cdab62007568aad?r=use1', '_blank');
 });
 
+/* ====== TOAST NOTIFICATIONS ====== */
+function showToast(title, message, type='info'){
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+
+  const iconMap = {
+    success: 'check-circle',
+    error: 'alert-circle',
+    info: 'info'
+  };
+
+  toast.innerHTML = `
+    <i data-lucide="${iconMap[type]}" class="toast-icon"></i>
+    <div class="toast-content">
+      <div class="toast-title">${title}</div>
+      ${message ? `<div class="toast-message">${message}</div>` : ''}
+    </div>
+    <i data-lucide="x" class="toast-close"></i>
+  `;
+
+  container.appendChild(toast);
+  lucide.createIcons();
+
+  // Close button
+  toast.querySelector('.toast-close').addEventListener('click', () => removeToast(toast));
+
+  // Auto remove after 5 seconds
+  setTimeout(() => removeToast(toast), 5000);
+}
+
+function removeToast(toast){
+  toast.classList.add('hiding');
+  setTimeout(() => toast.remove(), 300);
+}
+
+/* ====== PREVIEW MODAL ====== */
+let previewModalContent = null;
+
+function openPreviewModal(title, content, rawText){
+  document.getElementById('previewTitle').textContent = title;
+  document.getElementById('previewBody').innerHTML = content;
+  document.getElementById('previewModal').classList.add('active');
+  previewModalContent = rawText;
+  lucide.createIcons();
+}
+
+function closePreviewModal(){
+  document.getElementById('previewModal').classList.remove('active');
+  previewModalContent = null;
+}
+
+document.getElementById('previewClose').addEventListener('click', closePreviewModal);
+document.getElementById('previewCloseBtn').addEventListener('click', closePreviewModal);
+document.getElementById('previewCopyBtn').addEventListener('click', async () => {
+  if(previewModalContent){
+    try{
+      await navigator.clipboard.writeText(previewModalContent);
+      showToast('Copied!', 'Content copied to clipboard', 'success');
+    }catch(e){
+      showToast('Copy Failed', 'Could not copy to clipboard', 'error');
+    }
+  }
+});
+document.getElementById('previewModal').addEventListener('click', (e) => {
+  if(e.target.id === 'previewModal') closePreviewModal();
+});
+
+/* ====== UTILITY FUNCTIONS ====== */
+function getCategoryClass(category){
+  return 'category-' + category.toLowerCase().replace(/\s+/g, '-');
+}
+
+function getCardBorderClass(category){
+  return 'card-border-' + category.toLowerCase().replace(/\s+/g, '-');
+}
+
+function isNew(dateCreated){
+  if(!dateCreated) return false;
+  const created = new Date(dateCreated);
+  const now = new Date();
+  const daysDiff = (now - created) / (1000 * 60 * 60 * 24);
+  return daysDiff <= 7;
+}
+
+function isTrending(useCount){
+  return Number(useCount || 0) >= 10;
+}
+
+function showSkeletonLoaders(containerId, count=6){
+  const grid = document.getElementById(containerId);
+  grid.innerHTML = '';
+  for(let i=0; i<count; i++){
+    const skeleton = document.createElement('div');
+    skeleton.className = 'skeleton skeleton-card';
+    grid.appendChild(skeleton);
+  }
+}
+
+function showEmptyState(containerId, icon, title, text, buttonText, buttonAction){
+  const grid = document.getElementById(containerId);
+  grid.innerHTML = `
+    <div class="empty-state col-span-full">
+      <div class="empty-state-icon"><i data-lucide="${icon}"></i></div>
+      <div class="empty-state-title">${title}</div>
+      <div class="empty-state-text">${text}</div>
+      ${buttonText ? `<button class="btn btn-brand" onclick="${buttonAction}"><i data-lucide="plus"></i> ${buttonText}</button>` : ''}
+    </div>
+  `;
+  lucide.createIcons();
+}
+
+/* ====== SEARCH CLEAR BUTTONS ====== */
+const waSearchInput = document.getElementById('wa-searchInput');
+const waSearchClear = document.getElementById('wa-searchClear');
+const gptSearchInput = document.getElementById('gpt-searchInput');
+const gptSearchClear = document.getElementById('gpt-searchClear');
+
+waSearchInput.addEventListener('input', () => {
+  waSearchClear.classList.toggle('hidden', !waSearchInput.value);
+});
+waSearchClear.addEventListener('click', () => {
+  waSearchInput.value = '';
+  waSearchClear.classList.add('hidden');
+  waPage = 1;
+  renderWA();
+});
+
+gptSearchInput.addEventListener('input', () => {
+  gptSearchClear.classList.toggle('hidden', !gptSearchInput.value);
+});
+gptSearchClear.addEventListener('click', () => {
+  gptSearchInput.value = '';
+  gptSearchClear.classList.add('hidden');
+  gptPage = 1;
+  renderGPT();
+});
+
 /* ================================================== */
 /* ============== WHATSAPP CONTENT ================== */
 /* ================================================== */
 
 async function syncWAContents(){
-  const res = await fetch(WA_API);
-  if(!res.ok){ alert('WA Sync failed: HTTP '+res.status); return; }
-  const data = await res.json();
-  waContents = Array.isArray(data.items)?data.items:[];
-  renderWACategories();
-  renderWA();
+  showSkeletonLoaders('wa-contentGrid', 6);
+  const syncBtn = document.getElementById('wa-syncBtn');
+  const syncIcon = syncBtn.querySelector('i');
+  syncIcon.classList.add('spin');
+
+  try{
+    const res = await fetch(WA_API);
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data = await res.json();
+    waContents = Array.isArray(data.items)?data.items:[];
+    renderWACategories();
+    renderWA();
+    showToast('Synced!', 'WhatsApp content updated successfully', 'success');
+  }catch(e){
+    console.error(e);
+    showToast('Sync Failed', 'Could not sync WhatsApp content: '+e.message, 'error');
+    renderWA();
+  }finally{
+    syncIcon.classList.remove('spin');
+  }
 }
 
 async function createWAItem(payload){
@@ -407,7 +678,7 @@ function renderWACategories(){
 
 function renderWA(){
   const grid = document.getElementById('wa-contentGrid');
-  const search = (document.getElementById('wa-searchInput').value||'').toLowerCase();
+  const search = (waSearchInput.value||'').toLowerCase();
   const cat = document.getElementById('wa-categorySelect').value;
 
   const filtered = waContents.filter(c =>
@@ -422,24 +693,39 @@ function renderWA(){
   const start = (waPage-1)*pageSize;
   const slice = filtered.slice(start,start+pageSize);
 
-  grid.innerHTML = slice.map(c=>{
+  if(!slice.length){
+    showEmptyState('wa-contentGrid', 'inbox', 'No Content Found',
+      search ? 'Try adjusting your search or filters' : 'Start by adding your first WhatsApp content',
+      !search ? 'Add Content' : '',
+      'document.getElementById("wa-addBtn").click()');
+    return;
+  }
+
+  grid.innerHTML = slice.map((c,idx)=>{
     const waText = c.formattedContent || toWhatsApp(c.content||'');
     const waHTML = whatsappPreviewHTML(waText);
-    const bubbleId = `wa-text-${escapeHtml(c.id ?? `${start + slice.indexOf(c)}`)}`;
+    const bubbleId = `wa-text-${escapeHtml(c.id ?? `${start + idx}`)}`;
+    const categoryClass = getCategoryClass(c.category||'general');
+    const borderClass = getCardBorderClass(c.category||'general');
+    const showNew = isNew(c.dateCreated);
+    const showTrending = isTrending(c.useCount);
+
     return `
-    <div class="h-full">
-      <div class="card rounded-xl shadow-soft flex flex-col p-4 h-[420px]">
+    <div class="h-full fade-in" style="animation-delay:${idx*50}ms">
+      <div class="card rounded-xl shadow-soft flex flex-col p-4 h-[420px] ${borderClass}" data-card-id="${escapeHtml(c.id||'')}">
         <div class="flex justify-between items-start">
-          <div>
-            <h3 class="text-lg font-semibold">${escapeHtml(c.title||'')}</h3>
-            <div class="flex items-center gap-2 mt-1">
-              <span class="chip bg-[var(--brand)] text-[var(--brand-ink)]">${escapeHtml(c.category||'')}</span>
+          <div class="flex-1">
+            <h3 class="text-lg font-semibold cursor-pointer hover:text-[var(--brand)] transition-colors" onclick="openWAPreview('${escapeHtml(c.id||'')}')">${escapeHtml(c.title||'')}</h3>
+            <div class="flex items-center gap-2 mt-1 flex-wrap">
+              <span class="chip ${categoryClass}">${escapeHtml(c.category||'')}</span>
+              ${showNew ? '<span class="badge badge-new"><i data-lucide="sparkles"></i>NEW</span>' : ''}
+              ${showTrending ? '<span class="badge badge-trending"><i data-lucide="flame"></i>TRENDING</span>' : ''}
               <span class="text-xs text-[var(--muted-ink)]">Used ${Number(c.useCount||0)} times</span>
             </div>
           </div>
         </div>
 
-        <div class="mt-3 flex-1 min-h-0 rounded-lg border border-[var(--border)] bg-[var(--muted)] overflow-hidden">
+        <div class="mt-3 flex-1 min-h-0 rounded-lg border border-[var(--border)] bg-[var(--muted)] overflow-hidden cursor-pointer hover:border-[var(--brand)] transition-colors" onclick="openWAPreview('${escapeHtml(c.id||'')}')">
           <div class="h-full overflow-auto p-3 text-sm scrollbar-thin">
             <div id="${bubbleId}" class="wa-bubble whitespace-pre-wrap w-full" data-wa-text data-wa-raw="${escapeHtml(waText).replaceAll('"','&quot;')}">
               ${waHTML}
@@ -478,25 +764,59 @@ function renderWA(){
 
   lucide.createIcons();
 
-  document.getElementById('wa-statTotal').textContent = waContents.length;
-  document.getElementById('wa-statUses').textContent = waContents.reduce((a,c)=>a+(c.useCount||0),0);
-  document.getElementById('wa-statCategories').textContent = new Set(waContents.map(c=>c.category)).size;
-  document.getElementById('wa-statRecent').textContent = waContents.filter(c=>c.lastUsed).length;
+  animateStatValue('wa-statTotal', waContents.length);
+  animateStatValue('wa-statUses', waContents.reduce((a,c)=>a+(c.useCount||0),0));
+  animateStatValue('wa-statCategories', new Set(waContents.map(c=>c.category)).size);
+  animateStatValue('wa-statRecent', waContents.filter(c=>c.lastUsed).length);
+
   document.getElementById('wa-pageNum').textContent = waPage;
   document.getElementById('wa-pageCount').textContent = pageCount;
   document.getElementById('wa-prevPage').disabled = waPage<=1;
   document.getElementById('wa-nextPage').disabled = waPage>=pageCount;
 }
 
+function animateStatValue(id, target){
+  const el = document.getElementById(id);
+  const current = parseInt(el.textContent) || 0;
+  if(current === target) return;
+
+  const duration = 500;
+  const steps = 20;
+  const increment = (target - current) / steps;
+  let step = 0;
+
+  const interval = setInterval(() => {
+    step++;
+    if(step >= steps){
+      el.textContent = target;
+      clearInterval(interval);
+    } else {
+      el.textContent = Math.round(current + (increment * step));
+    }
+  }, duration / steps);
+}
+
+function openWAPreview(id){
+  const item = waContents.find(x=>String(x.id)===String(id));
+  if(!item) return;
+  const waText = item.formattedContent || toWhatsApp(item.content||'');
+  const waHTML = `<div class="wa-bubble text-base">${whatsappPreviewHTML(waText)}</div>`;
+  openPreviewModal(item.title, waHTML, waText);
+}
+
 async function copyWAToClipboard(id){
   try{
     const item = waContents.find(x=>String(x.id)===String(id));
-    if(!item) return alert('Item not found.');
+    if(!item) return showToast('Not Found', 'Item not found', 'error');
     await navigator.clipboard.writeText(item.formattedContent || item.content || '');
     item.useCount = Number(item.useCount||0) + 1;
     item.lastUsed = new Date().toISOString().slice(0,10);
-    renderWA(); alert('Copied to clipboard!');
-  }catch(e){ console.error(e); alert('Copy failed.'); }
+    renderWA();
+    showToast('Copied!', 'Content copied to clipboard', 'success');
+  }catch(e){
+    console.error(e);
+    showToast('Copy Failed', 'Could not copy to clipboard', 'error');
+  }
 }
 
 /* WA EDIT */
@@ -510,7 +830,7 @@ let waEditItem = null;
 
 function openWAEditModal(id){
   waEditItem = waContents.find(x=> String(x.id) === String(id));
-  if(!waEditItem) return alert('Item not found');
+  if(!waEditItem) return showToast('Not Found', 'Item not found', 'error');
   waEditTitle.value = waEditItem.title || '';
   waEditCategory.value = waEditItem.category || waCategories[0];
   waEditContent.value = waEditItem.content || '';
@@ -537,8 +857,12 @@ document.getElementById('wa-editSave').addEventListener('click', async ()=>{
     };
     await updateWAItem(payload);
     Object.assign(waEditItem,payload);
-    closeWAEditModal(); renderWA(); alert('Saved.');
-  }catch(e){ console.error(e); alert('Save failed: '+e.message); }
+    closeWAEditModal(); renderWA();
+    showToast('Saved!', 'Content updated successfully', 'success');
+  }catch(e){
+    console.error(e);
+    showToast('Save Failed', 'Could not save changes: '+e.message, 'error');
+  }
 });
 
 /* WA ADD */
@@ -580,8 +904,12 @@ waSaveAdd.addEventListener('click', async ()=>{
       dateCreated:new Date().toISOString().slice(0,10),
       useCount:0
     };
-    await createWAItem(payload); closeWAAdd(); await syncWAContents(); alert('Content added!');
-  }catch(e){ console.error(e); alert('Add failed: '+e.message); }
+    await createWAItem(payload); closeWAAdd(); await syncWAContents();
+    showToast('Added!', 'Content created successfully', 'success');
+  }catch(e){
+    console.error(e);
+    showToast('Add Failed', 'Could not create content: '+e.message, 'error');
+  }
   finally{ waSaveAdd.disabled=false; }
 });
 
@@ -604,13 +932,17 @@ document.getElementById('wa-contentGrid').addEventListener('click', (e)=>{
 
 document.getElementById('wa-send').addEventListener('click', async ()=>{
   const digits = waPhoneInput.value.replace(/\D/g,''); const text=waTextArea.value.trim();
-  if(!digits){ alert('Enter phone number in international format (digits only).'); return; }
-  if(!text){ alert('Message is empty.'); return; }
+  if(!digits){ showToast('Invalid Number', 'Enter phone number in international format (digits only)', 'error'); return; }
+  if(!text){ showToast('Empty Message', 'Message cannot be empty', 'error'); return; }
   try{
     const r = await fetch('/api/send-whatsapp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({to:digits,text})});
     if(!r.ok) throw new Error('HTTP '+r.status);
-    alert('Sent ✅'); closeWASendModal();
-  }catch(err){ console.error(err); alert('Send failed: '+String(err?.message||err)); }
+    showToast('Sent!', 'Message sent via WhatsApp successfully', 'success');
+    closeWASendModal();
+  }catch(err){
+    console.error(err);
+    showToast('Send Failed', 'Could not send via WhatsApp: '+String(err?.message||err), 'error');
+  }
 });
 
 /* WA Controls */
@@ -625,12 +957,26 @@ document.getElementById('wa-nextPage').addEventListener('click',()=>{ waPage++; 
 /* ================================================== */
 
 async function syncGPTPrompts(){
-  const res = await fetch(GPT_API);
-  if(!res.ok){ alert('GPT Sync failed: HTTP '+res.status); return; }
-  const data = await res.json();
-  gptPrompts = Array.isArray(data.items)?data.items:[];
-  renderGPTCategories();
-  renderGPT();
+  showSkeletonLoaders('gpt-contentGrid', 6);
+  const syncBtn = document.getElementById('gpt-syncBtn');
+  const syncIcon = syncBtn.querySelector('i');
+  syncIcon.classList.add('spin');
+
+  try{
+    const res = await fetch(GPT_API);
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data = await res.json();
+    gptPrompts = Array.isArray(data.items)?data.items:[];
+    renderGPTCategories();
+    renderGPT();
+    showToast('Synced!', 'GPT prompts updated successfully', 'success');
+  }catch(e){
+    console.error(e);
+    showToast('Sync Failed', 'Could not sync GPT prompts: '+e.message, 'error');
+    renderGPT();
+  }finally{
+    syncIcon.classList.remove('spin');
+  }
 }
 
 async function createGPTItem(payload){
@@ -656,7 +1002,7 @@ function renderGPTCategories(){
 
 function renderGPT(){
   const grid = document.getElementById('gpt-contentGrid');
-  const search = (document.getElementById('gpt-searchInput').value||'').toLowerCase();
+  const search = (gptSearchInput.value||'').toLowerCase();
   const cat = document.getElementById('gpt-categorySelect').value;
 
   const filtered = gptPrompts.filter(c =>
@@ -671,17 +1017,32 @@ function renderGPT(){
   const start = (gptPage-1)*pageSize;
   const slice = filtered.slice(start,start+pageSize);
 
-  grid.innerHTML = slice.map(c=>{
+  if(!slice.length){
+    showEmptyState('gpt-contentGrid', 'brain', 'No Prompts Found',
+      search ? 'Try adjusting your search or filters' : 'Start by adding your first GPT prompt',
+      !search ? 'Add Prompt' : '',
+      'document.getElementById("gpt-addBtn").click()');
+    return;
+  }
+
+  grid.innerHTML = slice.map((c,idx)=>{
     const promptText = escapeHtml(c.prompt||'');
+    const categoryClass = getCategoryClass(c.category||'general');
+    const borderClass = getCardBorderClass(c.category||'general');
+    const showNew = isNew(c.dateCreated);
+    const showTrending = isTrending(c.useCount);
+
     return `
-    <div class="h-full">
-      <div class="card rounded-xl shadow-soft flex flex-col p-4 h-[420px]">
+    <div class="h-full fade-in" style="animation-delay:${idx*50}ms">
+      <div class="card rounded-xl shadow-soft flex flex-col p-4 h-[420px] ${borderClass}">
         <div class="flex justify-between items-start">
-          <div>
-            <h3 class="text-lg font-semibold">${escapeHtml(c.title||'')}</h3>
-            <div class="flex items-center gap-2 mt-1">
-              <span class="chip bg-[var(--brand)] text-[var(--brand-ink)]">${escapeHtml(c.category||'')}</span>
+          <div class="flex-1">
+            <h3 class="text-lg font-semibold cursor-pointer hover:text-[var(--brand)] transition-colors" onclick="openGPTPreview('${escapeHtml(c.id||'')}')">${escapeHtml(c.title||'')}</h3>
+            <div class="flex items-center gap-2 mt-1 flex-wrap">
+              <span class="chip ${categoryClass}">${escapeHtml(c.category||'')}</span>
               <span class="chip bg-[var(--chip)] text-[var(--chip-ink)]">${escapeHtml(c.model||'GPT-4')}</span>
+              ${showNew ? '<span class="badge badge-new"><i data-lucide="sparkles"></i>NEW</span>' : ''}
+              ${showTrending ? '<span class="badge badge-trending"><i data-lucide="flame"></i>TRENDING</span>' : ''}
               <span class="text-xs text-[var(--muted-ink)]">Used ${Number(c.useCount||0)} times</span>
             </div>
           </div>
@@ -689,7 +1050,7 @@ function renderGPT(){
 
         ${c.systemRole?`<div class="mt-2 text-xs text-[var(--muted-ink)] italic">System: ${escapeHtml(c.systemRole.slice(0,100))}${c.systemRole.length>100?'...':''}</div>`:''}
 
-        <div class="mt-3 flex-1 min-h-0 rounded-lg border border-[var(--border)] bg-[var(--muted)] overflow-hidden">
+        <div class="mt-3 flex-1 min-h-0 rounded-lg border border-[var(--border)] bg-[var(--muted)] overflow-hidden cursor-pointer hover:border-[var(--brand)] transition-colors" onclick="openGPTPreview('${escapeHtml(c.id||'')}')">
           <div class="h-full overflow-auto p-3 text-sm scrollbar-thin">
             <div class="prompt-bubble whitespace-pre-wrap w-full" data-prompt-id="${escapeHtml(c.id||'')}">${promptText}</div>
           </div>
@@ -723,26 +1084,35 @@ function renderGPT(){
 
   lucide.createIcons();
 
-  document.getElementById('gpt-statTotal').textContent = gptPrompts.length;
-  document.getElementById('gpt-statUses').textContent = gptPrompts.reduce((a,c)=>a+(c.useCount||0),0);
-  document.getElementById('gpt-statCategories').textContent = new Set(gptPrompts.map(c=>c.category)).size;
-  document.getElementById('gpt-statRecent').textContent = gptPrompts.filter(c=>c.lastUsed).length;
+  animateStatValue('gpt-statTotal', gptPrompts.length);
+  animateStatValue('gpt-statUses', gptPrompts.reduce((a,c)=>a+(c.useCount||0),0));
+  animateStatValue('gpt-statCategories', new Set(gptPrompts.map(c=>c.category)).size);
+  animateStatValue('gpt-statRecent', gptPrompts.filter(c=>c.lastUsed).length);
+
   document.getElementById('gpt-pageNum').textContent = gptPage;
   document.getElementById('gpt-pageCount').textContent = pageCount;
   document.getElementById('gpt-prevPage').disabled = gptPage<=1;
   document.getElementById('gpt-nextPage').disabled = gptPage>=pageCount;
 }
 
+function openGPTPreview(id){
+  const item = gptPrompts.find(x=>String(x.id)===String(id));
+  if(!item) return;
+  const fullText = (item.systemRole ? `System: ${item.systemRole}\n\n` : '') + (item.prompt || '');
+  const promptHTML = `<div class="prompt-bubble text-base">${escapeHtml(item.prompt||'')}</div>`;
+  openPreviewModal(item.title, promptHTML, fullText);
+}
+
 async function copyGPTToClipboard(id){
   try{
     const item = gptPrompts.find(x=>String(x.id)===String(id));
-    if(!item) return alert('Item not found.');
+    if(!item) return showToast('Not Found', 'Prompt not found', 'error');
     const fullText = (item.systemRole ? `System: ${item.systemRole}\n\n` : '') + (item.prompt || '');
     await navigator.clipboard.writeText(fullText);
     item.useCount = Number(item.useCount||0) + 1;
     item.lastUsed = new Date().toISOString().slice(0,10);
-    renderGPT(); alert('Copied to clipboard!');
-  }catch(e){ console.error(e); alert('Copy failed.'); }
+    renderGPT(); showToast('Copied!', 'Prompt copied to clipboard', 'success');
+  }catch(e){ console.error(e); showToast('Copy Failed', 'Could not copy: ' + e.message, 'error'); }
 }
 
 /* GPT EDIT */
@@ -757,7 +1127,7 @@ let gptEditItem = null;
 
 function openGPTEditModal(id){
   gptEditItem = gptPrompts.find(x=> String(x.id) === String(id));
-  if(!gptEditItem) return alert('Item not found');
+  if(!gptEditItem) return showToast('Not Found', 'Prompt not found', 'error');
   gptEditTitle.value = gptEditItem.title || '';
   gptEditCategory.value = gptEditItem.category || gptCategories[0];
   gptEditModel.value = gptEditItem.model || 'GPT-4';
@@ -784,8 +1154,8 @@ document.getElementById('gpt-editSave').addEventListener('click', async ()=>{
     };
     await updateGPTItem(payload);
     Object.assign(gptEditItem,payload);
-    closeGPTEditModal(); renderGPT(); alert('Saved.');
-  }catch(e){ console.error(e); alert('Save failed: '+e.message); }
+    closeGPTEditModal(); renderGPT(); showToast('Saved!', 'Prompt updated successfully', 'success');
+  }catch(e){ console.error(e); showToast('Save Failed', 'Could not save: ' + e.message, 'error'); }
 });
 
 /* GPT ADD */
@@ -830,8 +1200,8 @@ gptSaveAdd.addEventListener('click', async ()=>{
       dateCreated:new Date().toISOString().slice(0,10),
       useCount:0
     };
-    await createGPTItem(payload); closeGPTAdd(); await syncGPTPrompts(); alert('Prompt added!');
-  }catch(e){ console.error(e); alert('Add failed: '+e.message); }
+    await createGPTItem(payload); closeGPTAdd(); await syncGPTPrompts(); showToast('Added!', 'Prompt created successfully', 'success');
+  }catch(e){ console.error(e); showToast('Add Failed', 'Could not add prompt: ' + e.message, 'error'); }
   finally{ gptSaveAdd.disabled=false; }
 });
 
