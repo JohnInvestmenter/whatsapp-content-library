@@ -635,8 +635,8 @@ gptSearchClear.addEventListener('click', () => {
 async function syncWAContents(){
   showSkeletonLoaders('wa-contentGrid', 6);
   const syncBtn = document.getElementById('wa-syncBtn');
-  const syncIcon = syncBtn.querySelector('i');
-  syncIcon.classList.add('spin');
+  const syncIcon = syncBtn ? syncBtn.querySelector('i') : null;
+  if(syncIcon) syncIcon.classList.add('spin');
 
   try{
     const res = await fetch(WA_API);
@@ -651,7 +651,7 @@ async function syncWAContents(){
     showToast('Sync Failed', 'Could not sync WhatsApp content: '+e.message, 'error');
     renderWA();
   }finally{
-    syncIcon.classList.remove('spin');
+    if(syncIcon) syncIcon.classList.remove('spin');
   }
 }
 
@@ -959,8 +959,8 @@ document.getElementById('wa-nextPage').addEventListener('click',()=>{ waPage++; 
 async function syncGPTPrompts(){
   showSkeletonLoaders('gpt-contentGrid', 6);
   const syncBtn = document.getElementById('gpt-syncBtn');
-  const syncIcon = syncBtn.querySelector('i');
-  syncIcon.classList.add('spin');
+  const syncIcon = syncBtn ? syncBtn.querySelector('i') : null;
+  if(syncIcon) syncIcon.classList.add('spin');
 
   try{
     const res = await fetch(GPT_API);
@@ -975,7 +975,7 @@ async function syncGPTPrompts(){
     showToast('Sync Failed', 'Could not sync GPT prompts: '+e.message, 'error');
     renderGPT();
   }finally{
-    syncIcon.classList.remove('spin');
+    if(syncIcon) syncIcon.classList.remove('spin');
   }
 }
 
