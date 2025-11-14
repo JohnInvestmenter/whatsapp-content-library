@@ -340,10 +340,19 @@
 <div id="wa-modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50">
   <div class="card w-full max-w-md rounded-xl shadow-soft p-4">
     <h3 class="text-xl font-semibold mb-4">Send via WhatsApp</h3>
+    <div id="wa-send-attachments-info" class="hidden mb-4 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+      <div class="flex items-center gap-2 text-sm text-blue-800 dark:text-blue-200">
+        <i data-lucide="paperclip"></i>
+        <span id="wa-send-attachments-text"></span>
+      </div>
+    </div>
     <label class="block text-sm mb-2">Phone number (international, digits only)</label>
     <input id="wa-phone" type="tel" placeholder="9715XXXXXXXX" class="w-full p-3 rounded-lg border border-[var(--border)] bg-transparent mb-4"/>
     <label class="block text-sm mb-2">Message</label>
     <textarea id="wa-text" rows="6" class="w-full p-3 rounded-lg border border-[var(--border)] bg-transparent resize-vertical mb-4"></textarea>
+    <div id="wa-send-info-text" class="hidden text-xs text-[var(--muted-ink)] mb-4 flex items-center gap-1">
+      <i data-lucide="info"></i> <span>Attachments will be sent first, then the message</span>
+    </div>
     <div class="flex gap-2 justify-end">
       <button id="wa-cancel" class="btn">Cancel</button>
       <button id="wa-send" class="btn btn-brand">Send</button>
@@ -920,7 +929,7 @@ function renderWA(){
             <button class="btn btn-sm wa-copyBtn" data-id="${escapeHtml(c.id||'')}">
               <i data-lucide="copy" class="lucide"></i><span class="hidden md:inline">Copy</span>
             </button>
-            <button class="btn btn-sm wa-send-btn" data-wa-target="#${bubbleId}">
+            <button class="btn btn-sm wa-send-btn" data-item-id="${escapeHtml(c.id||'')}">
               <i data-lucide="send" class="lucide"></i><span class="hidden md:inline">Send</span>
             </button>
           </div>
@@ -1129,31 +1138,114 @@ waSaveAdd.addEventListener('click', async ()=>{
 const waModal = document.getElementById('wa-modal');
 const waPhoneInput = document.getElementById('wa-phone');
 const waTextArea = document.getElementById('wa-text');
+let currentSendItem = null;
 
-function openWASendModal(text){ waTextArea.value=text||''; waPhoneInput.value=''; waModal.classList.remove('hidden'); waModal.classList.add('flex'); setTimeout(()=>waPhoneInput.focus(),0); }
-function closeWASendModal(){ waModal.classList.add('hidden'); waModal.classList.remove('flex'); }
+function openWASendModal(itemId){
+  const item = waContents.find(x=>String(x.id)===String(itemId));
+  if(!item) return showToast('Not Found', 'Item not found', 'error');
+
+  currentSendItem = item;
+  const text = item.formattedContent || item.content || '';
+  waTextArea.value = text;
+  waPhoneInput.value='';
+
+  // Show attachment info if present
+  const attachments = item.attachments || [];
+  const attachmentInfo = document.getElementById('wa-send-attachments-info');
+  const attachmentText = document.getElementById('wa-send-attachments-text');
+  const infoText = document.getElementById('wa-send-info-text');
+
+  if(attachments.length > 0){
+    attachmentText.textContent = `${attachments.length} attachment(s) will be sent first`;
+    attachmentInfo.classList.remove('hidden');
+    infoText.classList.remove('hidden');
+  } else {
+    attachmentInfo.classList.add('hidden');
+    infoText.classList.add('hidden');
+  }
+
+  waModal.classList.remove('hidden');
+  waModal.classList.add('flex');
+  lucide.createIcons();
+  setTimeout(()=>waPhoneInput.focus(),0);
+}
+
+function closeWASendModal(){
+  waModal.classList.add('hidden');
+  waModal.classList.remove('flex');
+  currentSendItem = null;
+}
+
 document.getElementById('wa-cancel').addEventListener('click', closeWASendModal);
 waModal.addEventListener('click', (e)=>{ if(e.target===waModal) closeWASendModal(); });
 
 document.getElementById('wa-contentGrid').addEventListener('click', (e)=>{
-  const btn = e.target.closest('.wa-send-btn'); if(!btn) return;
-  const el = document.querySelector(btn.getAttribute('data-wa-target'));
-  const raw = el?.getAttribute('data-wa-raw') || el?.innerText?.trim() || '';
-  openWASendModal(raw);
+  const btn = e.target.closest('.wa-send-btn');
+  if(!btn) return;
+  const itemId = btn.getAttribute('data-item-id');
+  openWASendModal(itemId);
 });
 
 document.getElementById('wa-send').addEventListener('click', async ()=>{
-  const digits = waPhoneInput.value.replace(/\D/g,''); const text=waTextArea.value.trim();
-  if(!digits){ showToast('Invalid Number', 'Enter phone number in international format (digits only)', 'error'); return; }
-  if(!text){ showToast('Empty Message', 'Message cannot be empty', 'error'); return; }
+  const digits = waPhoneInput.value.replace(/\D/g,'');
+  const text = waTextArea.value.trim();
+  const sendBtn = document.getElementById('wa-send');
+
+  if(!digits){
+    showToast('Invalid Number', 'Enter phone number in international format (digits only)', 'error');
+    return;
+  }
+  if(!text){
+    showToast('Empty Message', 'Message cannot be empty', 'error');
+    return;
+  }
+
   try{
-    const r = await fetch('/api/send-whatsapp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({to:digits,text})});
+    sendBtn.disabled = true;
+    sendBtn.innerHTML = '<i data-lucide="loader" class="spin"></i> Sending...';
+    lucide.createIcons();
+
+    const attachments = currentSendItem?.attachments || [];
+
+    // Send attachments first (if any)
+    if(attachments.length > 0){
+      showToast('Sending...', `Sending ${attachments.length} attachment(s) first`, 'info');
+
+      for(let i = 0; i < attachments.length; i++){
+        const attachment = attachments[i];
+        const attachmentText = `${attachment.name}\n${attachment.url}`;
+
+        const r = await fetch('/api/send-whatsapp',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({to:digits, text:attachmentText})
+        });
+
+        if(!r.ok) throw new Error(`Failed to send attachment ${i+1}: HTTP ${r.status}`);
+
+        // Small delay between messages
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
+
+    // Then send the text content
+    const r = await fetch('/api/send-whatsapp',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({to:digits,text})
+    });
+
     if(!r.ok) throw new Error('HTTP '+r.status);
-    showToast('Sent!', 'Message sent via WhatsApp successfully', 'success');
+
+    const totalMessages = attachments.length + 1;
+    showToast('Sent!', `${totalMessages} message(s) sent via WhatsApp successfully`, 'success');
     closeWASendModal();
   }catch(err){
     console.error(err);
     showToast('Send Failed', 'Could not send via WhatsApp: '+String(err?.message||err), 'error');
+  }finally{
+    sendBtn.disabled = false;
+    sendBtn.innerHTML = 'Send';
   }
 });
 
