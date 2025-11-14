@@ -156,6 +156,19 @@
     .preview-header{ padding:20px; border-bottom:1px solid var(--border); display:flex; justify-content:between; align-items:center; }
     .preview-body{ padding:20px; overflow-y:auto; flex:1; }
     .preview-footer{ padding:20px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:10px; }
+    /* ---------- ATTACHMENT THUMBNAILS ---------- */
+    .attachment-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; }
+    .attachment-card{ display:flex; flex-direction:column; border-radius:12px; overflow:hidden; border:1px solid var(--border); background:var(--muted); transition:all .3s ease; text-decoration:none; color:inherit; }
+    .attachment-card:hover{ transform:translateY(-4px); box-shadow:0 8px 24px rgba(0,0,0,.15); border-color:var(--brand); }
+    .attachment-thumbnail{ width:100%; height:150px; background:var(--card); position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center; }
+    .attachment-thumbnail img{ width:100%; height:100%; object-fit:cover; }
+    .attachment-thumbnail video{ width:100%; height:100%; object-fit:cover; }
+    .attachment-thumbnail iframe{ width:100%; height:100%; border:none; pointer-events:none; }
+    .attachment-icon{ display:flex; align-items:center; justify-content:center; width:100%; height:100%; font-size:48px; color:var(--brand); opacity:.5; }
+    .attachment-play-icon{ position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:48px; color:white; opacity:.9; pointer-events:none; }
+    .attachment-info{ padding:8px 12px; display:flex; flex-direction:column; gap:4px; }
+    .attachment-name{ font-size:12px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .attachment-type{ font-size:10px; color:var(--muted-ink); font-weight:600; text-transform:uppercase; }
     /* ---------- FADE IN ANIMATION ---------- */
     @keyframes fadeIn{ from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
     .fade-in{ animation:fadeIn .4s ease forwards; }
@@ -290,6 +303,7 @@
       <div><label class="block text-sm mb-1">Category</label><select id="wa-editCategory" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"></select></div>
       <div><label class="block text-sm mb-1">Content</label><textarea id="wa-editContent" rows="8" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"></textarea></div>
       <div><label class="block text-sm mb-1">Tags (comma separated)</label><input id="wa-editTags" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"/></div>
+      <div><label class="block text-sm mb-1">Attachments</label><input id="wa-editFileUpload" type="file" multiple class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"/><div id="wa-editUploadStatus" class="text-sm text-[var(--muted-ink)] mt-1"></div><div id="wa-editExistingFiles" class="mt-2 text-sm"></div></div>
       <div><label class="block text-sm mb-1">WhatsApp Preview</label><div class="rounded-lg border border-[var(--border)] bg-[var(--muted)] p-2"><div id="wa-editPreview" class="wa-bubble text-sm max-h-48 overflow-auto whitespace-pre-wrap scrollbar-thin"></div></div></div>
     </div>
     <div class="p-4 border-t border-[var(--border)] flex justify-end gap-2">
@@ -311,6 +325,7 @@
       <div><label class="block text-sm mb-1">Category</label><select id="wa-categoryInput" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"></select></div>
       <div><label class="block text-sm mb-1">Content</label><textarea id="wa-contentInput" rows="8" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent" placeholder="Use **bold**, _italic_, ~strikethrough~, and `inline code`."></textarea></div>
       <div><label class="block text-sm mb-1">Tags (comma separated)</label><input id="wa-tagsInput" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent" placeholder="motivation, weekly, inspiration"/></div>
+      <div><label class="block text-sm mb-1">Attachments</label><input id="wa-fileUpload" type="file" multiple class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"/><div id="wa-uploadStatus" class="text-sm text-[var(--muted-ink)] mt-1"></div></div>
       <div><label class="block text-sm mb-1">WhatsApp Preview</label><div class="rounded-lg border border-[var(--border)] bg-[var(--muted)] p-2"><div id="wa-waPreview" class="wa-bubble text-sm max-h-48 overflow-auto whitespace-pre-wrap scrollbar-thin">(start typing above)</div></div></div>
     </div>
     <div class="p-4 border-t border-[var(--border)] flex justify-end gap-2">
@@ -529,9 +544,127 @@ function removeToast(toast){
 /* ====== PREVIEW MODAL ====== */
 let previewModalContent = null;
 
-function openPreviewModal(title, content, rawText){
+function getFileType(filename){
+  const ext = (filename || '').split('.').pop().toLowerCase();
+  if(['jpg','jpeg','png','gif','webp','svg','bmp'].includes(ext)) return 'image';
+  if(['mp4','webm','mov','avi','mkv'].includes(ext)) return 'video';
+  if(['pdf'].includes(ext)) return 'pdf';
+  if(['doc','docx','txt','rtf'].includes(ext)) return 'document';
+  if(['xls','xlsx','csv'].includes(ext)) return 'spreadsheet';
+  if(['ppt','pptx'].includes(ext)) return 'presentation';
+  if(['zip','rar','7z','tar','gz'].includes(ext)) return 'archive';
+  return 'file';
+}
+
+function getFileIcon(type){
+  const icons = {
+    image: 'image',
+    video: 'video',
+    pdf: 'file-text',
+    document: 'file-text',
+    spreadsheet: 'table',
+    presentation: 'presentation',
+    archive: 'archive',
+    file: 'file'
+  };
+  return icons[type] || 'file';
+}
+
+function renderAttachmentThumbnail(attachment){
+  const type = getFileType(attachment.name);
+  const icon = getFileIcon(type);
+
+  if(type === 'image'){
+    return `
+      <a href="${attachment.url}" target="_blank" class="attachment-card">
+        <div class="attachment-thumbnail">
+          <img src="${attachment.url}" alt="${escapeHtml(attachment.name)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+          <div class="attachment-icon" style="display:none;">
+            <i data-lucide="${icon}"></i>
+          </div>
+        </div>
+        <div class="attachment-info">
+          <div class="attachment-name">${escapeHtml(attachment.name)}</div>
+          <div class="attachment-type">${type.toUpperCase()}</div>
+        </div>
+      </a>
+    `;
+  }
+
+  if(type === 'video'){
+    return `
+      <a href="${attachment.url}" target="_blank" class="attachment-card">
+        <div class="attachment-thumbnail">
+          <video src="${attachment.url}" preload="metadata" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"></video>
+          <div class="attachment-icon" style="display:none;">
+            <i data-lucide="${icon}"></i>
+          </div>
+          <div class="attachment-play-icon">
+            <i data-lucide="play-circle"></i>
+          </div>
+        </div>
+        <div class="attachment-info">
+          <div class="attachment-name">${escapeHtml(attachment.name)}</div>
+          <div class="attachment-type">${type.toUpperCase()}</div>
+        </div>
+      </a>
+    `;
+  }
+
+  if(type === 'pdf'){
+    return `
+      <a href="${attachment.url}" target="_blank" class="attachment-card">
+        <div class="attachment-thumbnail">
+          <iframe src="${attachment.url}#page=1&view=FitH" style="width:100%; height:100%; border:none; pointer-events:none;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"></iframe>
+          <div class="attachment-icon">
+            <i data-lucide="${icon}"></i>
+          </div>
+        </div>
+        <div class="attachment-info">
+          <div class="attachment-name">${escapeHtml(attachment.name)}</div>
+          <div class="attachment-type">PDF</div>
+        </div>
+      </a>
+    `;
+  }
+
+  // Default for other file types
+  return `
+    <a href="${attachment.url}" target="_blank" class="attachment-card">
+      <div class="attachment-thumbnail">
+        <div class="attachment-icon">
+          <i data-lucide="${icon}"></i>
+        </div>
+      </div>
+      <div class="attachment-info">
+        <div class="attachment-name">${escapeHtml(attachment.name)}</div>
+        <div class="attachment-type">${type.toUpperCase()}</div>
+      </div>
+    </a>
+  `;
+}
+
+function openPreviewModal(title, content, rawText, attachments = []){
+  console.log('openPreviewModal called with:', { title, attachments });
   document.getElementById('previewTitle').textContent = title;
-  document.getElementById('previewBody').innerHTML = content;
+
+  // Build content with attachments
+  let fullContent = content;
+  if(attachments && attachments.length){
+    console.log('Rendering attachments:', attachments);
+    fullContent += `
+      <div class="mt-4 pt-4 border-t border-[var(--border)]">
+        <div class="font-semibold mb-3 text-sm">Attachments (${attachments.length})</div>
+        <div class="attachment-grid">
+          ${attachments.map(a => renderAttachmentThumbnail(a)).join('')}
+        </div>
+      </div>
+    `;
+  } else {
+    console.log('No attachments to display');
+  }
+
+  document.getElementById('previewBody').innerHTML = fullContent;
   document.getElementById('previewModal').classList.add('active');
   previewModalContent = rawText;
   lucide.createIcons();
@@ -631,6 +764,43 @@ gptSearchClear.addEventListener('click', () => {
 /* ================================================== */
 /* ============== WHATSAPP CONTENT ================== */
 /* ================================================== */
+
+/* FILE UPLOAD */
+let uploadedFiles = [];
+
+async function uploadFilesToDrive(fileInputEl, statusEl){
+  const files = Array.from(fileInputEl.files || []);
+  if(!files.length) return [];
+
+  statusEl.textContent = 'Uploading files...';
+  const results = [];
+
+  for(const file of files){
+    try{
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch(DRIVE_APP_SCRIPT, {
+        method: 'POST',
+        body: formData
+      });
+
+      if(!res.ok) throw new Error('Upload failed');
+      const data = await res.json();
+
+      if(data.url && data.name){
+        results.push({ name: data.name, url: data.url, fileId: data.fileId });
+        statusEl.textContent = `Uploaded ${results.length}/${files.length} files`;
+      }
+    }catch(e){
+      console.error('File upload error:', e);
+      showToast('Upload Error', `Failed to upload ${file.name}`, 'error');
+    }
+  }
+
+  statusEl.textContent = results.length ? `${results.length} file(s) uploaded` : 'No files uploaded';
+  return results;
+}
 
 async function syncWAContents(){
   showSkeletonLoaders('wa-contentGrid', 6);
@@ -737,6 +907,10 @@ function renderWA(){
           ${(c.tags||[]).map(t=>`<span class="chip bg-black/5 dark:bg-white/5">${escapeHtml('#'+t)}</span>`).join('')}
         </div>
 
+        ${(c.attachments && c.attachments.length) ? `<div class="mt-2 flex flex-wrap gap-2 text-xs">
+          ${c.attachments.map(a=>`<a href="${a.url}" target="_blank" class="flex items-center gap-1 text-[var(--muted-ink)] hover:text-[var(--brand)] transition-colors"><i data-lucide="paperclip"></i>${escapeHtml(a.name)}</a>`).join('')}
+        </div>` : ''}
+
         <div class="mt-3 flex flex-wrap items-center justify-between gap-2">
           <span class="text-xs text-[var(--muted-ink)]">Created: ${escapeHtml(c.dateCreated||'')}</span>
           <div class="flex flex-wrap items-center gap-1">
@@ -799,9 +973,11 @@ function animateStatValue(id, target){
 function openWAPreview(id){
   const item = waContents.find(x=>String(x.id)===String(id));
   if(!item) return;
+  console.log('Opening preview for item:', item);
+  console.log('Attachments:', item.attachments);
   const waText = item.formattedContent || toWhatsApp(item.content||'');
   const waHTML = `<div class="wa-bubble text-base">${whatsappPreviewHTML(waText)}</div>`;
-  openPreviewModal(item.title, waHTML, waText);
+  openPreviewModal(item.title, waHTML, waText, item.attachments || []);
 }
 
 async function copyWAToClipboard(id){
@@ -835,6 +1011,22 @@ function openWAEditModal(id){
   waEditCategory.value = waEditItem.category || waCategories[0];
   waEditContent.value = waEditItem.content || '';
   waEditTags.value = (waEditItem.tags || []).join(', ');
+
+  // Display existing attachments
+  const existingFilesEl = document.getElementById('wa-editExistingFiles');
+  const attachments = waEditItem.attachments || [];
+  if(attachments.length){
+    existingFilesEl.innerHTML = '<div class="font-semibold mb-1">Current Attachments:</div>' +
+      attachments.map(a => `<div class="flex items-center gap-2 text-[var(--muted-ink)]"><i data-lucide="paperclip"></i><a href="${a.url}" target="_blank" class="hover:text-[var(--brand)]">${a.name}</a></div>`).join('');
+    lucide.createIcons();
+  } else {
+    existingFilesEl.innerHTML = '';
+  }
+
+  // Clear file input and status
+  document.getElementById('wa-editFileUpload').value = '';
+  document.getElementById('wa-editUploadStatus').textContent = '';
+
   updateWAEditPreview();
   waEditModal.classList.remove('hidden'); waEditModal.classList.add('flex');
 }
@@ -847,13 +1039,23 @@ waEditContent.addEventListener('input', updateWAEditPreview);
 document.getElementById('wa-editSave').addEventListener('click', async ()=>{
   if(!waEditItem) return;
   try{
+    // Upload new files if any
+    const fileInput = document.getElementById('wa-editFileUpload');
+    const statusEl = document.getElementById('wa-editUploadStatus');
+    const newAttachments = await uploadFilesToDrive(fileInput, statusEl);
+
+    // Merge with existing attachments
+    const existingAttachments = waEditItem.attachments || [];
+    const allAttachments = [...existingAttachments, ...newAttachments];
+
     const payload = {
       id: waEditItem.id,
       title: (waEditTitle.value||'').trim(),
       category: waEditCategory.value || 'General',
       content: (waEditContent.value||'').trim(),
       formattedContent: toWhatsApp(waEditContent.value||''),
-      tags: (waEditTags.value||'').split(',').map(t=>t.trim()).filter(Boolean)
+      tags: (waEditTags.value||'').split(',').map(t=>t.trim()).filter(Boolean),
+      attachments: allAttachments
     };
     await updateWAItem(payload);
     Object.assign(waEditItem,payload);
@@ -883,6 +1085,9 @@ document.getElementById('wa-clearAdd').addEventListener('click',resetWAAdd);
 
 function resetWAAdd(){
   waTitleInput.value=''; waCategoryInput.value=waCategories[0]; waContentInput.value=''; waTagsInput.value='';
+  document.getElementById('wa-fileUpload').value = '';
+  document.getElementById('wa-uploadStatus').textContent = '';
+  uploadedFiles = [];
   waWaPreview.innerHTML='(start typing above)'; updateWASaveDisabled();
 }
 function updateWASaveDisabled(){
@@ -895,6 +1100,12 @@ waTitleInput.addEventListener('input',updateWASaveDisabled);
 waSaveAdd.addEventListener('click', async ()=>{
   try{
     waSaveAdd.disabled=true;
+
+    // Upload files if any
+    const fileInput = document.getElementById('wa-fileUpload');
+    const statusEl = document.getElementById('wa-uploadStatus');
+    const attachments = await uploadFilesToDrive(fileInput, statusEl);
+
     const payload = {
       title:(waTitleInput.value||'').trim(),
       category: waCategoryInput.value || 'General',
@@ -902,7 +1113,8 @@ waSaveAdd.addEventListener('click', async ()=>{
       formattedContent: toWhatsApp(waContentInput.value||''),
       tags:(waTagsInput.value||'').split(',').map(t=>t.trim()).filter(Boolean),
       dateCreated:new Date().toISOString().slice(0,10),
-      useCount:0
+      useCount:0,
+      attachments: attachments
     };
     await createWAItem(payload); closeWAAdd(); await syncWAContents();
     showToast('Added!', 'Content created successfully', 'success');
