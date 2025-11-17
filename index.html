@@ -351,7 +351,7 @@
     <label class="block text-sm mb-2">Message</label>
     <textarea id="wa-text" rows="6" class="w-full p-3 rounded-lg border border-[var(--border)] bg-transparent resize-vertical mb-4"></textarea>
     <div id="wa-send-info-text" class="hidden text-xs text-[var(--muted-ink)] mb-4 flex items-center gap-1">
-      <i data-lucide="info"></i> <span>Files will be sent as WhatsApp media, then the text message</span>
+      <i data-lucide="info"></i> <span>Links will be sent first, then the text message</span>
     </div>
     <div class="flex gap-2 justify-end">
       <button id="wa-cancel" class="btn">Cancel</button>
@@ -1156,7 +1156,7 @@ function openWASendModal(itemId){
   const infoText = document.getElementById('wa-send-info-text');
 
   if(attachments.length > 0){
-    attachmentText.textContent = `${attachments.length} file(s) will be sent as media first`;
+    attachmentText.textContent = `${attachments.length} link(s) will be sent first`;
     attachmentInfo.classList.remove('hidden');
     infoText.classList.remove('hidden');
   } else {
@@ -1209,25 +1209,25 @@ document.getElementById('wa-send').addEventListener('click', async ()=>{
 
     // Send attachments first (if any)
     if(attachments.length > 0){
-      showToast('Sending...', `Sending ${attachments.length} file(s) first`, 'info');
+      showToast('Sending...', `Sending ${attachments.length} link(s) first`, 'info');
 
       for(let i = 0; i < attachments.length; i++){
         const attachment = attachments[i];
+        const linkText = attachment.url;
 
         const r = await fetch('/api/send-whatsapp',{
           method:'POST',
           headers:{'Content-Type':'application/json'},
           body:JSON.stringify({
             to: digits,
-            fileUrl: attachment.url,
-            fileName: attachment.name
+            text: linkText
           })
         });
 
-        if(!r.ok) throw new Error(`Failed to send file ${i+1}: HTTP ${r.status}`);
+        if(!r.ok) throw new Error(`Failed to send link ${i+1}: HTTP ${r.status}`);
 
         // Small delay between messages to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
     }
 
@@ -1241,7 +1241,7 @@ document.getElementById('wa-send').addEventListener('click', async ()=>{
     if(!r.ok) throw new Error('HTTP '+r.status);
 
     if(attachments.length > 0){
-      showToast('Sent!', `${attachments.length} file(s) + message sent via WhatsApp successfully`, 'success');
+      showToast('Sent!', `${attachments.length} link(s) + message sent via WhatsApp successfully`, 'success');
     } else {
       showToast('Sent!', 'Message sent via WhatsApp successfully', 'success');
     }
