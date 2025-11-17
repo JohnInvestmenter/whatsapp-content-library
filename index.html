@@ -423,7 +423,9 @@
     </div>
     <div class="preview-body" id="previewBody"></div>
     <div class="preview-footer">
-      <button id="previewCopyBtn" class="btn btn-sm"><i data-lucide="copy"></i> Copy</button>
+      <button id="previewSendBtn" class="btn btn-sm" style="display:none;"><i data-lucide="send"></i> Send via WhatsApp</button>
+      <button id="previewCopyWABtn" class="btn btn-sm"><i data-lucide="message-circle"></i> Copy for WhatsApp</button>
+      <button id="previewCopyEmailBtn" class="btn btn-sm"><i data-lucide="mail"></i> Copy for Email</button>
       <button id="previewCloseBtn" class="btn btn-sm btn-brand">Close</button>
     </div>
   </div>
@@ -552,6 +554,32 @@ function removeToast(toast){
 
 /* ====== PREVIEW MODAL ====== */
 let previewModalContent = null;
+let previewModalItemId = null;
+let previewModalType = null; // 'whatsapp' or 'gpt'
+
+/* ====== FORMAT CONVERSION ====== */
+function convertWhatsAppToHTML(text){
+  if(!text) return '';
+
+  let html = text;
+
+  // Convert bold: **text** to <strong>text</strong>
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+  // Convert italic: _text_ to <em>text</em>
+  html = html.replace(/\_(.+?)\_/g, '<em>$1</em>');
+
+  // Convert strikethrough: ~text~ to <s>text</s>
+  html = html.replace(/\~(.+?)\~/g, '<s>$1</s>');
+
+  // Convert inline code: `text` to <code>text</code>
+  html = html.replace(/\`(.+?)\`/g, '<code>$1</code>');
+
+  // Convert line breaks to <br>
+  html = html.replace(/\n/g, '<br>');
+
+  return html;
+}
 
 function getFileType(filename){
   const ext = (filename || '').split('.').pop().toLowerCase();
@@ -653,9 +681,21 @@ function renderAttachmentThumbnail(attachment){
   `;
 }
 
-function openPreviewModal(title, content, rawText, attachments = []){
-  console.log('openPreviewModal called with:', { title, attachments });
+function openPreviewModal(title, content, rawText, attachments = [], itemId = null, type = null){
+  console.log('openPreviewModal called with:', { title, attachments, itemId, type });
   document.getElementById('previewTitle').textContent = title;
+
+  // Store item info for send button
+  previewModalItemId = itemId;
+  previewModalType = type;
+
+  // Show send button only for WhatsApp content
+  const sendBtn = document.getElementById('previewSendBtn');
+  if(type === 'whatsapp' && itemId){
+    sendBtn.style.display = 'inline-flex';
+  } else {
+    sendBtn.style.display = 'none';
+  }
 
   // Build content with attachments
   let fullContent = content;
@@ -682,20 +722,55 @@ function openPreviewModal(title, content, rawText, attachments = []){
 function closePreviewModal(){
   document.getElementById('previewModal').classList.remove('active');
   previewModalContent = null;
+  previewModalItemId = null;
+  previewModalType = null;
 }
 
 document.getElementById('previewClose').addEventListener('click', closePreviewModal);
 document.getElementById('previewCloseBtn').addEventListener('click', closePreviewModal);
-document.getElementById('previewCopyBtn').addEventListener('click', async () => {
+
+// Copy for WhatsApp (original format)
+document.getElementById('previewCopyWABtn').addEventListener('click', async () => {
   if(previewModalContent){
     try{
       await navigator.clipboard.writeText(previewModalContent);
-      showToast('Copied!', 'Content copied to clipboard', 'success');
+      showToast('Copied!', 'Content copied for WhatsApp', 'success');
     }catch(e){
       showToast('Copy Failed', 'Could not copy to clipboard', 'error');
     }
   }
 });
+
+// Copy for Email (HTML format)
+document.getElementById('previewCopyEmailBtn').addEventListener('click', async () => {
+  if(previewModalContent){
+    try{
+      const htmlContent = convertWhatsAppToHTML(previewModalContent);
+      const plainText = previewModalContent;
+
+      // Copy both plain text and HTML to clipboard
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          'text/plain': new Blob([plainText], { type: 'text/plain' }),
+          'text/html': new Blob([htmlContent], { type: 'text/html' })
+        })
+      ]);
+
+      showToast('Copied!', 'Content copied for Email with formatting', 'success');
+    }catch(e){
+      console.error('Copy error:', e);
+      showToast('Copy Failed', 'Could not copy to clipboard', 'error');
+    }
+  }
+});
+
+document.getElementById('previewSendBtn').addEventListener('click', () => {
+  if(previewModalType === 'whatsapp' && previewModalItemId){
+    closePreviewModal();
+    openWASendModal(previewModalItemId);
+  }
+});
+
 document.getElementById('previewModal').addEventListener('click', (e) => {
   if(e.target.id === 'previewModal') closePreviewModal();
 });
@@ -926,9 +1001,19 @@ function renderWA(){
             <button class="btn btn-sm wa-editBtn" data-id="${escapeHtml(c.id||'')}">
               <i data-lucide="edit-3" class="lucide"></i><span class="hidden md:inline">Edit</span>
             </button>
-            <button class="btn btn-sm wa-copyBtn" data-id="${escapeHtml(c.id||'')}">
-              <i data-lucide="copy" class="lucide"></i><span class="hidden md:inline">Copy</span>
-            </button>
+            <div class="relative inline-block">
+              <button class="btn btn-sm wa-copy-dropdown-btn" data-id="${escapeHtml(c.id||'')}">
+                <i data-lucide="copy" class="lucide"></i><span class="hidden md:inline">Copy</span><i data-lucide="chevron-down" class="lucide ml-1" style="width:14px;height:14px;"></i>
+              </button>
+              <div class="wa-copy-dropdown hidden absolute bottom-full mb-1 right-0 bg-[var(--card)] border border-[var(--border)] rounded-lg shadow-lg z-10 min-w-[160px]">
+                <button class="wa-copy-wa-btn w-full text-left px-3 py-2 hover:bg-[var(--muted)] flex items-center gap-2 text-sm" data-id="${escapeHtml(c.id||'')}">
+                  <i data-lucide="message-circle" style="width:16px;height:16px;"></i>WhatsApp
+                </button>
+                <button class="wa-copy-email-btn w-full text-left px-3 py-2 hover:bg-[var(--muted)] flex items-center gap-2 text-sm rounded-b-lg" data-id="${escapeHtml(c.id||'')}">
+                  <i data-lucide="mail" style="width:16px;height:16px;"></i>Email
+                </button>
+              </div>
+            </div>
             <button class="btn btn-sm wa-send-btn" data-item-id="${escapeHtml(c.id||'')}">
               <i data-lucide="send" class="lucide"></i><span class="hidden md:inline">Send</span>
             </button>
@@ -938,11 +1023,46 @@ function renderWA(){
     </div>`;
   }).join('');
 
-  document.querySelectorAll('.wa-copyBtn').forEach(btn=>{
-    btn.addEventListener('click',()=> copyWAToClipboard(btn.getAttribute('data-id')));
+  // Handle copy dropdown toggle
+  document.querySelectorAll('.wa-copy-dropdown-btn').forEach(btn=>{
+    btn.addEventListener('click',(e)=> {
+      e.stopPropagation();
+      const dropdown = btn.nextElementSibling;
+      // Close all other dropdowns
+      document.querySelectorAll('.wa-copy-dropdown').forEach(d => {
+        if(d !== dropdown) d.classList.add('hidden');
+      });
+      dropdown.classList.toggle('hidden');
+    });
   });
+
+  // Handle copy for WhatsApp
+  document.querySelectorAll('.wa-copy-wa-btn').forEach(btn=>{
+    btn.addEventListener('click',(e)=> {
+      e.stopPropagation();
+      const id = btn.getAttribute('data-id');
+      copyWAToClipboard(id, 'whatsapp');
+      btn.closest('.wa-copy-dropdown').classList.add('hidden');
+    });
+  });
+
+  // Handle copy for Email
+  document.querySelectorAll('.wa-copy-email-btn').forEach(btn=>{
+    btn.addEventListener('click',(e)=> {
+      e.stopPropagation();
+      const id = btn.getAttribute('data-id');
+      copyWAToClipboard(id, 'email');
+      btn.closest('.wa-copy-dropdown').classList.add('hidden');
+    });
+  });
+
   document.querySelectorAll('.wa-editBtn').forEach(btn=>{
     btn.addEventListener('click',()=> openWAEditModal(btn.getAttribute('data-id')));
+  });
+
+  // Close dropdowns when clicking outside
+  document.addEventListener('click', () => {
+    document.querySelectorAll('.wa-copy-dropdown').forEach(d => d.classList.add('hidden'));
   });
 
   lucide.createIcons();
@@ -986,18 +1106,35 @@ function openWAPreview(id){
   console.log('Attachments:', item.attachments);
   const waText = item.formattedContent || toWhatsApp(item.content||'');
   const waHTML = `<div class="wa-bubble text-base">${whatsappPreviewHTML(waText)}</div>`;
-  openPreviewModal(item.title, waHTML, waText, item.attachments || []);
+  openPreviewModal(item.title, waHTML, waText, item.attachments || [], id, 'whatsapp');
 }
 
-async function copyWAToClipboard(id){
+async function copyWAToClipboard(id, format = 'whatsapp'){
   try{
     const item = waContents.find(x=>String(x.id)===String(id));
     if(!item) return showToast('Not Found', 'Item not found', 'error');
-    await navigator.clipboard.writeText(item.formattedContent || item.content || '');
+
+    const content = item.formattedContent || item.content || '';
+
+    if(format === 'email'){
+      // Copy as HTML for email
+      const htmlContent = convertWhatsAppToHTML(content);
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          'text/plain': new Blob([content], { type: 'text/plain' }),
+          'text/html': new Blob([htmlContent], { type: 'text/html' })
+        })
+      ]);
+      showToast('Copied!', 'Content copied for Email with formatting', 'success');
+    } else {
+      // Copy as plain text for WhatsApp
+      await navigator.clipboard.writeText(content);
+      showToast('Copied!', 'Content copied for WhatsApp', 'success');
+    }
+
     item.useCount = Number(item.useCount||0) + 1;
     item.lastUsed = new Date().toISOString().slice(0,10);
     renderWA();
-    showToast('Copied!', 'Content copied to clipboard', 'success');
   }catch(e){
     console.error(e);
     showToast('Copy Failed', 'Could not copy to clipboard', 'error');
@@ -1410,7 +1547,7 @@ function openGPTPreview(id){
   if(!item) return;
   const fullText = (item.systemRole ? `System: ${item.systemRole}\n\n` : '') + (item.prompt || '');
   const promptHTML = `<div class="prompt-bubble text-base">${escapeHtml(item.prompt||'')}</div>`;
-  openPreviewModal(item.title, promptHTML, fullText);
+  openPreviewModal(item.title, promptHTML, fullText, [], null, 'gpt');
 }
 
 async function copyGPTToClipboard(id){
