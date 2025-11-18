@@ -57,6 +57,12 @@
     .btn-sm{ padding:.35rem .55rem; border-radius:.6rem; font-size:12px; gap:.35rem; line-height:1; }
     .btn-xs{ padding:.25rem .45rem; border-radius:.5rem; font-size:11px; gap:.3rem; line-height:1; }
     .btn-sm .lucide, .btn-xs .lucide{ width:16px; height:16px; }
+    /* ---------- FORMAT TOOLBAR ---------- */
+    .formatting-toolbar{ display:flex; align-items:center; gap:.25rem; }
+    .format-btn{ display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:.5rem; border:1px solid var(--border); background:transparent; cursor:pointer; transition:all .2s ease; }
+    .format-btn:hover{ background:var(--brand); color:var(--brand-ink); border-color:var(--brand); transform:scale(1.05); }
+    .format-btn:active{ transform:scale(.95); }
+    .format-btn i{ width:16px; height:16px; }
     /* ---------- TABS ---------- */
     .tab{ padding:.75rem 1.5rem; border-bottom:2px solid transparent; cursor:pointer; transition:all .2s; }
     .tab:hover{ background:rgba(0,0,0,.04); }
@@ -301,7 +307,27 @@
     <div class="p-4 space-y-4 overflow-y-auto scrollbar-thin" style="max-height:60vh">
       <div><label class="block text-sm mb-1">Title</label><input id="wa-editTitle" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"/></div>
       <div><label class="block text-sm mb-1">Category</label><select id="wa-editCategory" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"></select></div>
-      <div><label class="block text-sm mb-1">Content</label><textarea id="wa-editContent" rows="8" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"></textarea></div>
+      <div>
+        <label class="block text-sm mb-1">Content</label>
+        <div class="formatting-toolbar flex items-center gap-1 p-2 rounded-t-lg border border-b-0 border-[var(--border)] bg-[var(--muted)]">
+          <button type="button" class="format-btn" data-format="bold" data-target="wa-editContent" title="Bold (**text**)">
+            <i data-lucide="bold"></i>
+          </button>
+          <button type="button" class="format-btn" data-format="italic" data-target="wa-editContent" title="Italic (_text_)">
+            <i data-lucide="italic"></i>
+          </button>
+          <button type="button" class="format-btn" data-format="strikethrough" data-target="wa-editContent" title="Strikethrough (~text~)">
+            <i data-lucide="strikethrough"></i>
+          </button>
+          <button type="button" class="format-btn" data-format="code" data-target="wa-editContent" title="Code (`text`)">
+            <i data-lucide="code"></i>
+          </button>
+          <button type="button" class="format-btn" data-format="monospace" data-target="wa-editContent" title="Monospace (```text```)">
+            <i data-lucide="file-code"></i>
+          </button>
+        </div>
+        <textarea id="wa-editContent" rows="8" class="w-full p-2 rounded-b-lg border border-t-0 border-[var(--border)] bg-transparent" style="border-top-left-radius: 0; border-top-right-radius: 0;"></textarea>
+      </div>
       <div><label class="block text-sm mb-1">Tags (comma separated)</label><input id="wa-editTags" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"/></div>
       <div><label class="block text-sm mb-1">Attachments</label><input id="wa-editFileUpload" type="file" multiple class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"/><div id="wa-editUploadStatus" class="text-sm text-[var(--muted-ink)] mt-1"></div><div id="wa-editExistingFiles" class="mt-2 text-sm"></div></div>
       <div><label class="block text-sm mb-1">WhatsApp Preview</label><div class="rounded-lg border border-[var(--border)] bg-[var(--muted)] p-2"><div id="wa-editPreview" class="wa-bubble text-sm max-h-48 overflow-auto whitespace-pre-wrap scrollbar-thin"></div></div></div>
@@ -323,7 +349,27 @@
     <div class="p-4 space-y-4 overflow-y-auto scrollbar-thin" style="max-height:60vh">
       <div><label class="block text-sm mb-1">Title</label><input id="wa-titleInput" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent" placeholder="Content title..."/></div>
       <div><label class="block text-sm mb-1">Category</label><select id="wa-categoryInput" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"></select></div>
-      <div><label class="block text-sm mb-1">Content</label><textarea id="wa-contentInput" rows="8" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent" placeholder="Use **bold**, _italic_, ~strikethrough~, and `inline code`."></textarea></div>
+      <div>
+        <label class="block text-sm mb-1">Content</label>
+        <div class="formatting-toolbar flex items-center gap-1 p-2 rounded-t-lg border border-b-0 border-[var(--border)] bg-[var(--muted)]">
+          <button type="button" class="format-btn" data-format="bold" data-target="wa-contentInput" title="Bold (**text**)">
+            <i data-lucide="bold"></i>
+          </button>
+          <button type="button" class="format-btn" data-format="italic" data-target="wa-contentInput" title="Italic (_text_)">
+            <i data-lucide="italic"></i>
+          </button>
+          <button type="button" class="format-btn" data-format="strikethrough" data-target="wa-contentInput" title="Strikethrough (~text~)">
+            <i data-lucide="strikethrough"></i>
+          </button>
+          <button type="button" class="format-btn" data-format="code" data-target="wa-contentInput" title="Code (`text`)">
+            <i data-lucide="code"></i>
+          </button>
+          <button type="button" class="format-btn" data-format="monospace" data-target="wa-contentInput" title="Monospace (```text```)">
+            <i data-lucide="file-code"></i>
+          </button>
+        </div>
+        <textarea id="wa-contentInput" rows="8" class="w-full p-2 rounded-b-lg border border-t-0 border-[var(--border)] bg-transparent" placeholder="Use the toolbar above or type manually..." style="border-top-left-radius: 0; border-top-right-radius: 0;"></textarea>
+      </div>
       <div><label class="block text-sm mb-1">Tags (comma separated)</label><input id="wa-tagsInput" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent" placeholder="motivation, weekly, inspiration"/></div>
       <div><label class="block text-sm mb-1">Attachments</label><input id="wa-fileUpload" type="file" multiple class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"/><div id="wa-uploadStatus" class="text-sm text-[var(--muted-ink)] mt-1"></div></div>
       <div><label class="block text-sm mb-1">WhatsApp Preview</label><div class="rounded-lg border border-[var(--border)] bg-[var(--muted)] p-2"><div id="wa-waPreview" class="wa-bubble text-sm max-h-48 overflow-auto whitespace-pre-wrap scrollbar-thin">(start typing above)</div></div></div>
@@ -580,6 +626,74 @@ function convertWhatsAppToHTML(text){
 
   return html;
 }
+
+/* ====== TEXT FORMATTING ====== */
+function applyTextFormat(textareaId, format){
+  const textarea = document.getElementById(textareaId);
+  if(!textarea) return;
+
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  const selectedText = textarea.value.substring(start, end);
+  const beforeText = textarea.value.substring(0, start);
+  const afterText = textarea.value.substring(end);
+
+  let formattedText = '';
+  let cursorOffset = 0;
+
+  switch(format){
+    case 'bold':
+      formattedText = `**${selectedText || 'bold text'}**`;
+      cursorOffset = selectedText ? formattedText.length : 2;
+      break;
+    case 'italic':
+      formattedText = `_${selectedText || 'italic text'}_`;
+      cursorOffset = selectedText ? formattedText.length : 1;
+      break;
+    case 'strikethrough':
+      formattedText = `~${selectedText || 'strikethrough text'}~`;
+      cursorOffset = selectedText ? formattedText.length : 1;
+      break;
+    case 'code':
+      formattedText = `\`${selectedText || 'code'}\``;
+      cursorOffset = selectedText ? formattedText.length : 1;
+      break;
+    case 'monospace':
+      formattedText = `\`\`\`${selectedText || 'monospace text'}\`\`\``;
+      cursorOffset = selectedText ? formattedText.length : 3;
+      break;
+    default:
+      return;
+  }
+
+  // Insert formatted text
+  textarea.value = beforeText + formattedText + afterText;
+
+  // Set cursor position
+  if(selectedText){
+    textarea.setSelectionRange(start + formattedText.length, start + formattedText.length);
+  } else {
+    textarea.setSelectionRange(start + cursorOffset, start + formattedText.length - cursorOffset);
+  }
+
+  // Focus textarea and trigger input event for preview update
+  textarea.focus();
+  textarea.dispatchEvent(new Event('input'));
+}
+
+// Add event listeners for all format buttons
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('.format-btn');
+  if(!btn) return;
+
+  e.preventDefault();
+  const format = btn.getAttribute('data-format');
+  const target = btn.getAttribute('data-target');
+
+  if(format && target){
+    applyTextFormat(target, format);
+  }
+});
 
 function getFileType(filename){
   const ext = (filename || '').split('.').pop().toLowerCase();
@@ -1175,6 +1289,7 @@ function openWAEditModal(id){
 
   updateWAEditPreview();
   waEditModal.classList.remove('hidden'); waEditModal.classList.add('flex');
+  lucide.createIcons();
 }
 function closeWAEditModal(){ waEditModal.classList.add('hidden'); waEditModal.classList.remove('flex'); }
 document.getElementById('wa-editClose').addEventListener('click', closeWAEditModal);
@@ -1222,7 +1337,7 @@ const waTagsInput = document.getElementById('wa-tagsInput');
 const waWaPreview = document.getElementById('wa-waPreview');
 const waSaveAdd = document.getElementById('wa-saveAdd');
 
-function openWAAdd(){ resetWAAdd(); waAddModal.classList.remove('hidden'); waAddModal.classList.add('flex'); waTitleInput.focus(); }
+function openWAAdd(){ resetWAAdd(); waAddModal.classList.remove('hidden'); waAddModal.classList.add('flex'); lucide.createIcons(); setTimeout(() => waTitleInput.focus(), 0); }
 function closeWAAdd(){ waAddModal.classList.add('hidden'); waAddModal.classList.remove('flex'); }
 document.getElementById('wa-addBtn').addEventListener('click',openWAAdd);
 document.getElementById('wa-addClose').addEventListener('click',closeWAAdd);
