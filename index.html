@@ -310,7 +310,7 @@
       <div>
         <label class="block text-sm mb-1">Content</label>
         <div class="formatting-toolbar flex items-center gap-1 p-2 rounded-t-lg border border-b-0 border-[var(--border)] bg-[var(--muted)]">
-          <button type="button" class="format-btn" data-format="bold" data-target="wa-editContent" title="Bold (**text**)">
+          <button type="button" class="format-btn" data-format="bold" data-target="wa-editContent" title="Bold (*text*)">
             <i data-lucide="bold"></i>
           </button>
           <button type="button" class="format-btn" data-format="italic" data-target="wa-editContent" title="Italic (_text_)">
@@ -352,7 +352,7 @@
       <div>
         <label class="block text-sm mb-1">Content</label>
         <div class="formatting-toolbar flex items-center gap-1 p-2 rounded-t-lg border border-b-0 border-[var(--border)] bg-[var(--muted)]">
-          <button type="button" class="format-btn" data-format="bold" data-target="wa-contentInput" title="Bold (**text**)">
+          <button type="button" class="format-btn" data-format="bold" data-target="wa-contentInput" title="Bold (*text*)">
             <i data-lucide="bold"></i>
           </button>
           <button type="button" class="format-btn" data-format="italic" data-target="wa-contentInput" title="Italic (_text_)">
@@ -609,8 +609,8 @@ function convertWhatsAppToHTML(text){
 
   let html = text;
 
-  // Convert bold: **text** to <strong>text</strong>
-  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  // Convert bold: *text* to <strong>text</strong>
+  html = html.replace(/\*(.+?)\*/g, '<strong>$1</strong>');
 
   // Convert italic: _text_ to <em>text</em>
   html = html.replace(/\_(.+?)\_/g, '<em>$1</em>');
@@ -643,8 +643,8 @@ function applyTextFormat(textareaId, format){
 
   switch(format){
     case 'bold':
-      formattedText = `**${selectedText || 'bold text'}**`;
-      cursorOffset = selectedText ? formattedText.length : 2;
+      formattedText = `*${selectedText || 'bold text'}*`;
+      cursorOffset = selectedText ? formattedText.length : 1;
       break;
     case 'italic':
       formattedText = `_${selectedText || 'italic text'}_`;
