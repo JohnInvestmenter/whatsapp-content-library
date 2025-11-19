@@ -687,53 +687,110 @@ function htmlToWhatsApp(html) {
   const tempDiv = document.createElement('div');
   tempDiv.innerHTML = html;
 
+  // Helper function to check if element has bold styling
+  function isBold(node) {
+    if (!node.style) return false;
+    const fontWeight = node.style.fontWeight;
+    return fontWeight === 'bold' || fontWeight === '700' || parseInt(fontWeight) >= 600;
+  }
+
+  // Helper function to check if element has italic styling
+  function isItalic(node) {
+    if (!node.style) return false;
+    return node.style.fontStyle === 'italic';
+  }
+
+  // Helper function to check if element has strikethrough styling
+  function isStrikethrough(node) {
+    if (!node.style) return false;
+    const textDecor = node.style.textDecoration || node.style.textDecorationLine;
+    return textDecor && textDecor.includes('line-through');
+  }
+
+  // Check if element is a block-level element
+  function isBlockElement(tagName) {
+    return ['p', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'li', 'ul', 'ol', 'blockquote'].includes(tagName);
+  }
+
   // Recursive function to convert HTML nodes to WhatsApp format
-  function processNode(node) {
+  function processNode(node, formatting = { bold: false, italic: false, strikethrough: false }) {
     if (node.nodeType === Node.TEXT_NODE) {
-      return node.textContent;
+      let text = node.textContent;
+      // Apply formatting to text content
+      if (formatting.bold) text = `*${text}*`;
+      if (formatting.italic) text = `_${text}_`;
+      if (formatting.strikethrough) text = `~${text}~`;
+      return text;
     }
 
     if (node.nodeType === Node.ELEMENT_NODE) {
-      let text = '';
-      for (let child of node.childNodes) {
-        text += processNode(child);
-      }
-
       const tagName = node.tagName.toLowerCase();
 
-      // Convert HTML tags to WhatsApp format
-      switch(tagName) {
-        case 'strong':
-        case 'b':
-          return `*${text}*`;
-        case 'em':
-        case 'i':
-          return `_${text}_`;
-        case 's':
-        case 'strike':
-        case 'del':
-          return `~${text}~`;
-        case 'code':
-          return `\`${text}\``;
-        case 'pre':
-          return `\`\`\`${text}\`\`\``;
-        case 'br':
-          return '\n';
-        case 'p':
-        case 'div':
-          // Add line break after paragraphs/divs but avoid double breaks
-          return text + '\n';
-        default:
-          return text;
+      // Handle line breaks
+      if (tagName === 'br') return '\n';
+
+      // Check what formatting this element adds
+      const addsBold = (tagName === 'strong' || tagName === 'b' || isBold(node)) && !formatting.bold;
+      const addsItalic = (tagName === 'em' || tagName === 'i' || isItalic(node)) && !formatting.italic;
+      const addsStrikethrough = (tagName === 's' || tagName === 'strike' || tagName === 'del' || isStrikethrough(node)) && !formatting.strikethrough;
+
+      // Update formatting for children
+      const newFormatting = {
+        bold: formatting.bold || addsBold,
+        italic: formatting.italic || addsItalic,
+        strikethrough: formatting.strikethrough || addsStrikethrough
+      };
+
+      // Handle code specially
+      if (tagName === 'code') {
+        let text = '';
+        for (let child of node.childNodes) {
+          text += processNode(child, { bold: false, italic: false, strikethrough: false });
+        }
+        return `\`${text}\``;
       }
+      if (tagName === 'pre') {
+        let text = '';
+        for (let child of node.childNodes) {
+          text += processNode(child, { bold: false, italic: false, strikethrough: false });
+        }
+        return `\`\`\`${text}\`\`\``;
+      }
+
+      // Process all children
+      let result = '';
+      const isBlock = isBlockElement(tagName);
+
+      for (let child of node.childNodes) {
+        result += processNode(child, newFormatting);
+      }
+
+      // Add line break after block elements
+      if (isBlock && result) {
+        // Remove trailing newlines from result to avoid duplicates
+        result = result.replace(/\n+$/, '') + '\n';
+      }
+
+      return result;
     }
 
     return '';
   }
 
   let result = processNode(tempDiv);
+
+  // Clean up formatting markers
+  // Remove formatting markers that wrap only whitespace or newlines
+  result = result.replace(/\*\s*\*/g, '');
+  result = result.replace(/_\s*_/g, '');
+  result = result.replace(/~\s*~/g, '');
+  result = result.replace(/\*\n+\*/g, '\n');
+  result = result.replace(/_\n+_/g, '\n');
+  result = result.replace(/~\n+~/g, '\n');
+
   // Clean up multiple consecutive line breaks
   result = result.replace(/\n{3,}/g, '\n\n').trim();
+
   return result;
 }
 
