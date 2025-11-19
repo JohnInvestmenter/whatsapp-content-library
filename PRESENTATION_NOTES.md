@@ -4,7 +4,7 @@
 
 ### Opening (5 minutes)
 - Introduce yourself and the problem
-- Hook: "How much time does your team spend recreating the same messages?"
+- Hook: "How much time do you spend recreating the same messages?"
 - Set expectations: What they'll learn today
 
 ---
@@ -14,11 +14,9 @@
 ### Slide 1-2: Problem Statement (3 minutes)
 **Key Points to Emphasize:**
 - Real pain: Teams waste 3-5 hours/week on repetitive messages
-- Consistency issue: Different team members = different messages
-- Cost: Lost productivity = real money ($3,900/month for a team of 10)
+- trying to find the text you sent to an investor a month ago to forward to another one
 
-**Engagement Question:**
-"Raise your hand if you've ever had to explain to a team member how to phrase something to a client?"
+
 
 ---
 
@@ -58,19 +56,6 @@ Share a brief example of how this solved a real problem
 **Interactive Element:**
 "Let me show you exactly how this works..." [Switch to live demo]
 
----
-
-### Slide 9-10: Visual Features (3 minutes)
-**Quick Overview:**
-- Point out the badges (NEW, TRENDING)
-- Show color coding
-- Demonstrate smooth animations
-- Highlight toast notifications
-
-**Keep it visual** - Let the interface speak for itself
-
----
-
 ### Slide 11: File Attachments (4 minutes)
 **Key Selling Point:**
 "Files are sent as actual WhatsApp media, not links!"
@@ -100,24 +85,6 @@ Share a brief example of how this solved a real problem
 
 ---
 
-### Slide 15: Statistics Dashboard (2 minutes)
-**Quick overview:**
-- Real-time metrics
-- Animated counters (show if presenting)
-- How this helps management
-
-**Management Hook:**
-"This is how you measure adoption and ROI"
-
----
-
-### Slide 16-20: Use Cases (8 minutes)
-**This is crucial - make it relatable**
-
-**For each use case:**
-1. State the problem clearly
-2. Show the solution
-3. Quantify the benefit
 
 **Customize these to your audience:**
 - If presenting to support team, focus on support use case
@@ -127,70 +94,7 @@ Share a brief example of how this solved a real problem
 **Interactive:**
 "Which of these scenarios sounds familiar to your team?"
 
----
 
-### Slide 21-22: Technical Integration (2 minutes)
-**Keep it high-level unless audience is technical**
-
-**Key Message:**
-"Built on enterprise-grade, proven platforms"
-
-**For non-technical audience:**
-- "It just works"
-- "Secure and reliable"
-- "Nothing to install"
-
-**For technical audience:**
-- Mention specific APIs
-- Talk about scalability
-- Discuss security measures
-
----
-
-### Slide 23: Security (2 minutes)
-**Important for enterprise audiences**
-
-**Emphasize:**
-- No data stored on our servers
-- Uses your existing accounts
-- Full access control
-- Enterprise-grade encryption
-
-**For compliance-focused industries:**
-Mention GDPR, data residency, audit trails
-
----
-
-### Slide 24-25: Getting Started & ROI (5 minutes)
-**The "what's in it for me" section**
-
-**ROI Calculation:**
-Walk through the math slowly:
-- 10 people × 3 hours/week × $30/hour = $900/week
-- Show annual savings: $39,000
-
-**Pause here for impact**
-"That's almost a full salary worth of productivity back"
-
-**Setup Time:**
-"15 minutes to get started - less time than this presentation"
-
----
-
-### Slide 26-27: Success Metrics & Roadmap (3 minutes)
-**Builds confidence**
-
-**Success Metrics:**
-- What they can measure immediately
-- How to track adoption
-- When to expect ROI
-
-**Roadmap:**
-- Shows ongoing investment
-- Demonstrates commitment
-- Teases future value
-
----
 
 ### Slide 28: LIVE DEMO (10 minutes if not done earlier)
 **If you haven't demoed yet, do it now**
@@ -213,33 +117,6 @@ Walk through the math slowly:
 
 **Keep it smooth, rehearse this part!**
 
----
-
-### Slide 29-30: Implementation Plan (3 minutes)
-**Make it feel achievable**
-
-**4-Week Plan:**
-- Week 1: "Just setup, we help you"
-- Week 2: "Training - we'll be there"
-- Week 3: "Pilot - safe to test"
-- Week 4: "Launch - you're ready"
-
-**Reassure:** "We'll be with you every step"
-
----
-
-### Slide 31-32: Pricing & Call to Action (3 minutes)
-**The close**
-
-**Pricing:**
-- Show total cost: $0-15/month
-- Compare to alternatives
-- Emphasize ROI
-
-**Call to Action:**
-1. Schedule a personalized demo
-2. Start a pilot program
-3. Get a custom quote
 
 **Clear next step:**
 "Who wants to be in our pilot program?"
@@ -349,8 +226,7 @@ or
 6. ✅ Case study or testimonials
 7. ✅ FAQ document
 
-### Email Template:
-```
+
 Subject: Content Library - [Company Name] Presentation Follow-Up
 
 Hi [Name],
