@@ -891,14 +891,33 @@ function handleFormattedPaste(textarea) {
   textarea.addEventListener('paste', (e) => {
     // Check if clipboard has HTML content
     const clipboardData = e.clipboardData || window.clipboardData;
-    const htmlData = clipboardData.getData('text/html');
 
-    if (htmlData) {
+    // Try to get HTML data from clipboard
+    let htmlData = clipboardData.getData('text/html');
+
+    // Fallback: some applications might use different MIME types
+    if (!htmlData) {
+      htmlData = clipboardData.getData('text/x-moz-html');
+    }
+    if (!htmlData) {
+      htmlData = clipboardData.getData('text/_moz_htmlcontext');
+    }
+
+    // Debug: log what we received (remove in production)
+    console.log('Paste event detected');
+    console.log('HTML data:', htmlData ? 'Found' : 'Not found');
+    console.log('Available types:', Array.from(clipboardData.types));
+
+    if (htmlData && htmlData.trim()) {
       // Prevent default paste
       e.preventDefault();
 
+      console.log('Converting HTML to WhatsApp format...');
+
       // Convert HTML to WhatsApp format
       const whatsappText = htmlToWhatsApp(htmlData);
+
+      console.log('Converted text:', whatsappText);
 
       // Insert converted text at cursor position
       const start = textarea.selectionStart;
@@ -914,6 +933,10 @@ function handleFormattedPaste(textarea) {
 
       // Trigger input event to update preview
       textarea.dispatchEvent(new Event('input'));
+
+      console.log('Paste conversion complete!');
+    } else {
+      console.log('No HTML data found, allowing default paste behavior');
     }
     // If no HTML data, let default paste behavior happen (plain text)
   });
@@ -1204,15 +1227,30 @@ gptSearchClear.addEventListener('click', () => {
 /* FILE UPLOAD */
 let uploadedFiles = [];
 
+// Global upload state tracker
+let isUploading = false;
+
 async function uploadFilesToDrive(fileInputEl, statusEl){
   const files = Array.from(fileInputEl.files || []);
   if(!files.length) return [];
 
-  statusEl.textContent = 'Uploading files...';
+  // Set uploading state
+  isUploading = true;
+  updateSaveButtonStates();
+
+  // Show upload progress with spinner
+  statusEl.innerHTML = '<span class="flex items-center gap-2"><i data-lucide="loader-2" class="spin"></i><span>Uploading files...</span></span>';
+  lucide.createIcons();
+
   const results = [];
 
-  for(const file of files){
+  for(let i = 0; i < files.length; i++){
+    const file = files[i];
     try{
+      // Update progress for current file
+      statusEl.innerHTML = `<span class="flex items-center gap-2"><i data-lucide="loader-2" class="spin"></i><span>Uploading ${i + 1}/${files.length}: ${file.name}</span></span>`;
+      lucide.createIcons();
+
       const formData = new FormData();
       formData.append('file', file);
 
@@ -1226,16 +1264,63 @@ async function uploadFilesToDrive(fileInputEl, statusEl){
 
       if(data.url && data.name){
         results.push({ name: data.name, url: data.url, fileId: data.fileId });
-        statusEl.textContent = `Uploaded ${results.length}/${files.length} files`;
+        // Show success for this file
+        statusEl.innerHTML = `<span class="flex items-center gap-2 text-[var(--success)]"><i data-lucide="check-circle"></i><span>Uploaded ${results.length}/${files.length} files</span></span>`;
+        lucide.createIcons();
       }
     }catch(e){
       console.error('File upload error:', e);
       showToast('Upload Error', `Failed to upload ${file.name}`, 'error');
+      // Show error in status
+      statusEl.innerHTML = `<span class="flex items-center gap-2 text-[var(--error)]"><i data-lucide="alert-circle"></i><span>Failed to upload ${file.name}</span></span>`;
+      lucide.createIcons();
     }
   }
 
-  statusEl.textContent = results.length ? `${results.length} file(s) uploaded` : 'No files uploaded';
+  // Clear uploading state
+  isUploading = false;
+  updateSaveButtonStates();
+
+  // Show final status
+  if(results.length > 0) {
+    statusEl.innerHTML = `<span class="flex items-center gap-2 text-[var(--success)]"><i data-lucide="check-circle"></i><span>${results.length} file(s) uploaded successfully</span></span>`;
+  } else {
+    statusEl.innerHTML = '<span class="flex items-center gap-2 text-[var(--muted-ink)]"><i data-lucide="info"></i><span>No files uploaded</span></span>';
+  }
+  lucide.createIcons();
+
   return results;
+}
+
+// Helper function to update save button states based on upload status
+function updateSaveButtonStates() {
+  // Update Add modal save button
+  const addSaveBtn = document.getElementById('wa-saveAdd');
+  if(addSaveBtn) {
+    if(isUploading) {
+      addSaveBtn.disabled = true;
+      addSaveBtn.style.opacity = '0.5';
+      addSaveBtn.style.cursor = 'not-allowed';
+    } else {
+      updateWASaveDisabled(); // Use existing validation logic
+      addSaveBtn.style.opacity = '';
+      addSaveBtn.style.cursor = '';
+    }
+  }
+
+  // Update Edit modal save button
+  const editSaveBtn = document.getElementById('wa-editSave');
+  if(editSaveBtn) {
+    if(isUploading) {
+      editSaveBtn.disabled = true;
+      editSaveBtn.style.opacity = '0.5';
+      editSaveBtn.style.cursor = 'not-allowed';
+    } else {
+      editSaveBtn.disabled = false;
+      editSaveBtn.style.opacity = '';
+      editSaveBtn.style.cursor = '';
+    }
+  }
 }
 
 async function syncWAContents(){
@@ -1523,7 +1608,8 @@ function openWAEditModal(id){
 
   // Clear file input and status
   document.getElementById('wa-editFileUpload').value = '';
-  document.getElementById('wa-editUploadStatus').textContent = '';
+  document.getElementById('wa-editUploadStatus').innerHTML = '';
+  waEditNewAttachments = []; // Clear new attachments for this edit session
 
   updateWAEditPreview();
   waEditModal.classList.remove('hidden'); waEditModal.classList.add('flex');
@@ -1537,13 +1623,22 @@ waEditContent.addEventListener('input', updateWAEditPreview);
 // Enable formatted paste for edit textarea
 handleFormattedPaste(waEditContent);
 
+// Track new attachments for edit modal
+let waEditNewAttachments = [];
+
+// Auto-upload files when selected (Edit modal)
+document.getElementById('wa-editFileUpload').addEventListener('change', async function() {
+  const statusEl = document.getElementById('wa-editUploadStatus');
+  if(this.files.length > 0) {
+    waEditNewAttachments = await uploadFilesToDrive(this, statusEl);
+  }
+});
+
 document.getElementById('wa-editSave').addEventListener('click', async ()=>{
   if(!waEditItem) return;
   try{
-    // Upload new files if any
-    const fileInput = document.getElementById('wa-editFileUpload');
-    const statusEl = document.getElementById('wa-editUploadStatus');
-    const newAttachments = await uploadFilesToDrive(fileInput, statusEl);
+    // Use already uploaded new files
+    const newAttachments = waEditNewAttachments || [];
 
     // Merge with existing attachments
     const existingAttachments = waEditItem.attachments || [];
@@ -1587,7 +1682,7 @@ document.getElementById('wa-clearAdd').addEventListener('click',resetWAAdd);
 function resetWAAdd(){
   waTitleInput.value=''; waCategoryInput.value=waCategories[0]; waContentInput.value=''; waTagsInput.value='';
   document.getElementById('wa-fileUpload').value = '';
-  document.getElementById('wa-uploadStatus').textContent = '';
+  document.getElementById('wa-uploadStatus').innerHTML = '';
   uploadedFiles = [];
   waWaPreview.innerHTML='(start typing above)'; updateWASaveDisabled();
 }
@@ -1600,14 +1695,20 @@ waContentInput.addEventListener('input',()=>{ waWaPreview.innerHTML=whatsappPrev
 handleFormattedPaste(waContentInput);
 waTitleInput.addEventListener('input',updateWASaveDisabled);
 
+// Auto-upload files when selected (Add modal)
+document.getElementById('wa-fileUpload').addEventListener('change', async function() {
+  const statusEl = document.getElementById('wa-uploadStatus');
+  if(this.files.length > 0) {
+    uploadedFiles = await uploadFilesToDrive(this, statusEl);
+  }
+});
+
 waSaveAdd.addEventListener('click', async ()=>{
   try{
     waSaveAdd.disabled=true;
 
-    // Upload files if any
-    const fileInput = document.getElementById('wa-fileUpload');
-    const statusEl = document.getElementById('wa-uploadStatus');
-    const attachments = await uploadFilesToDrive(fileInput, statusEl);
+    // Use already uploaded files
+    const attachments = uploadedFiles || [];
 
     const payload = {
       title:(waTitleInput.value||'').trim(),
