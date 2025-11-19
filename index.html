@@ -1225,133 +1225,16 @@ gptSearchClear.addEventListener('click', () => {
 /* ================================================== */
 
 /* FILE UPLOAD */
-let uploadedFiles = [];
+let addAttachments = [];
+let inflightUploads = 0;
 
-// Global upload state tracker
-let isUploading = false;
-
-async function uploadFilesToDrive(fileInputEl, statusEl){
-  console.log('=== Upload function called ===');
-  console.log('File input element:', fileInputEl);
-  console.log('Status element:', statusEl);
-
-  const files = Array.from(fileInputEl.files || []);
-  console.log('Files selected:', files.length);
-  console.log('File details:', files.map(f => ({name: f.name, size: f.size, type: f.type})));
-
-  if(!files.length) {
-    console.log('No files to upload, returning empty array');
-    return [];
-  }
-
-  // Set uploading state
-  isUploading = true;
-  console.log('Upload state set to true');
-  updateSaveButtonStates();
-
-  // Show upload progress with spinner
-  statusEl.innerHTML = '<span class="flex items-center gap-2"><i data-lucide="loader-2" class="spin"></i><span>Uploading files...</span></span>';
-  lucide.createIcons();
-
-  const results = [];
-
-  for(let i = 0; i < files.length; i++){
-    const file = files[i];
-    console.log(`\n--- Uploading file ${i + 1}/${files.length}: ${file.name} ---`);
-
-    try{
-      // Update progress for current file
-      statusEl.innerHTML = `<span class="flex items-center gap-2"><i data-lucide="loader-2" class="spin"></i><span>Uploading ${i + 1}/${files.length}: ${file.name}</span></span>`;
-      lucide.createIcons();
-
-      const formData = new FormData();
-      formData.append('file', file);
-
-      console.log('Sending request to:', DRIVE_APP_SCRIPT);
-      console.log('FormData created with file:', file.name);
-
-      const res = await fetch(DRIVE_APP_SCRIPT, {
-        method: 'POST',
-        body: formData
-      });
-
-      console.log('Response status:', res.status, res.statusText);
-
-      if(!res.ok) {
-        const errorText = await res.text();
-        console.error('Upload failed with status:', res.status, errorText);
-        throw new Error(`Upload failed: ${res.status} - ${errorText}`);
-      }
-
-      const data = await res.json();
-      console.log('Response data:', data);
-
-      if(data.url && data.name){
-        results.push({ name: data.name, url: data.url, fileId: data.fileId });
-        console.log('File uploaded successfully:', data.name);
-        // Show success for this file
-        statusEl.innerHTML = `<span class="flex items-center gap-2 text-[var(--success)]"><i data-lucide="check-circle"></i><span>Uploaded ${results.length}/${files.length} files</span></span>`;
-        lucide.createIcons();
-      } else {
-        console.error('Invalid response data:', data);
-        throw new Error('Invalid response: missing url or name');
-      }
-    }catch(e){
-      console.error('File upload error for', file.name, ':', e);
-      console.error('Error stack:', e.stack);
-      showToast('Upload Error', `Failed to upload ${file.name}: ${e.message}`, 'error');
-      // Show error in status
-      statusEl.innerHTML = `<span class="flex items-center gap-2 text-[var(--error)]"><i data-lucide="alert-circle"></i><span>Failed to upload ${file.name}</span></span>`;
-      lucide.createIcons();
-    }
-  }
-
-  // Clear uploading state
-  isUploading = false;
-  console.log('Upload state set to false');
-  updateSaveButtonStates();
-
-  // Show final status
-  console.log(`\n=== Upload complete: ${results.length}/${files.length} files uploaded ===`);
-  if(results.length > 0) {
-    statusEl.innerHTML = `<span class="flex items-center gap-2 text-[var(--success)]"><i data-lucide="check-circle"></i><span>${results.length} file(s) uploaded successfully</span></span>`;
-  } else {
-    statusEl.innerHTML = '<span class="flex items-center gap-2 text-[var(--muted-ink)]"><i data-lucide="info"></i><span>No files uploaded</span></span>';
-  }
-  lucide.createIcons();
-
-  return results;
-}
-
-// Helper function to update save button states based on upload status
-function updateSaveButtonStates() {
-  // Update Add modal save button
-  const addSaveBtn = document.getElementById('wa-saveAdd');
-  if(addSaveBtn) {
-    if(isUploading) {
-      addSaveBtn.disabled = true;
-      addSaveBtn.style.opacity = '0.5';
-      addSaveBtn.style.cursor = 'not-allowed';
-    } else {
-      updateWASaveDisabled(); // Use existing validation logic
-      addSaveBtn.style.opacity = '';
-      addSaveBtn.style.cursor = '';
-    }
-  }
-
-  // Update Edit modal save button
-  const editSaveBtn = document.getElementById('wa-editSave');
-  if(editSaveBtn) {
-    if(isUploading) {
-      editSaveBtn.disabled = true;
-      editSaveBtn.style.opacity = '0.5';
-      editSaveBtn.style.cursor = 'not-allowed';
-    } else {
-      editSaveBtn.disabled = false;
-      editSaveBtn.style.opacity = '';
-      editSaveBtn.style.cursor = '';
-    }
-  }
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result).split(',')[1] || '');
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
 }
 
 async function syncWAContents(){
@@ -1639,8 +1522,9 @@ function openWAEditModal(id){
 
   // Clear file input and status
   document.getElementById('wa-editFileUpload').value = '';
-  document.getElementById('wa-editUploadStatus').innerHTML = '';
-  waEditNewAttachments = []; // Clear new attachments for this edit session
+  document.getElementById('wa-editUploadStatus').textContent = '';
+  waEditNewAttachments = [];
+  waEditInflightUploads = 0;
 
   updateWAEditPreview();
   waEditModal.classList.remove('hidden'); waEditModal.classList.add('flex');
@@ -1654,33 +1538,64 @@ waEditContent.addEventListener('input', updateWAEditPreview);
 // Enable formatted paste for edit textarea
 handleFormattedPaste(waEditContent);
 
-// Track new attachments for edit modal
+// File upload for Edit modal
 let waEditNewAttachments = [];
+let waEditInflightUploads = 0;
 
-// Auto-upload files when selected (Edit modal)
-document.getElementById('wa-editFileUpload').addEventListener('change', async function() {
-  console.log('=== File input changed (Edit modal) ===');
-  console.log('Files selected:', this.files.length);
+document.getElementById('wa-editFileUpload').addEventListener('change', async function(e) {
+  const files = Array.from(e.target.files || []);
+  if(!files.length) return;
+
   const statusEl = document.getElementById('wa-editUploadStatus');
-  console.log('Status element found:', !!statusEl);
-  if(this.files.length > 0) {
-    console.log('Starting upload...');
-    waEditNewAttachments = await uploadFilesToDrive(this, statusEl);
-    console.log('Upload complete, uploaded files:', waEditNewAttachments);
-  } else {
-    console.log('No files selected');
+  const saveBtn = document.getElementById('wa-editSave');
+
+  waEditInflightUploads += files.length;
+  saveBtn.disabled = true;
+  statusEl.textContent = `Uploading ${waEditInflightUploads} file(s)…`;
+
+  for(const file of files) {
+    try {
+      const base64 = await fileToBase64(file);
+      const res = await fetch(DRIVE_APP_SCRIPT, {
+        method: 'POST',
+        body: JSON.stringify({
+          files: [{
+            name: file.name,
+            mimeType: file.type || 'application/octet-stream',
+            dataBase64: base64
+          }]
+        })
+      });
+
+      const j = await res.json();
+      if(!res.ok || !j.success) throw new Error(j.error || 'Upload failed');
+
+      const f = j.files[0];
+      waEditNewAttachments.push({ id: f.id, name: f.name, url: f.url });
+      statusEl.textContent = `${waEditNewAttachments.length} file(s) uploaded`;
+    } catch(err) {
+      console.error(err);
+      showToast('Upload Error', `Failed to upload ${file.name}: ${err.message}`, 'error');
+    } finally {
+      waEditInflightUploads--;
+      statusEl.textContent = waEditInflightUploads ? `Uploading ${waEditInflightUploads}…` : `${waEditNewAttachments.length} file(s) ready`;
+      if(waEditInflightUploads === 0) saveBtn.disabled = false;
+    }
   }
+  this.value = '';
 });
 
 document.getElementById('wa-editSave').addEventListener('click', async ()=>{
   if(!waEditItem) return;
+  if(waEditInflightUploads > 0) return;
+
   try{
-    // Use already uploaded new files
-    const newAttachments = waEditNewAttachments || [];
+    const saveBtn = document.getElementById('wa-editSave');
+    saveBtn.disabled = true;
 
     // Merge with existing attachments
     const existingAttachments = waEditItem.attachments || [];
-    const allAttachments = [...existingAttachments, ...newAttachments];
+    const allAttachments = [...existingAttachments, ...waEditNewAttachments];
 
     const payload = {
       id: waEditItem.id,
@@ -1693,11 +1608,15 @@ document.getElementById('wa-editSave').addEventListener('click', async ()=>{
     };
     await updateWAItem(payload);
     Object.assign(waEditItem,payload);
+    waEditNewAttachments = []; // Reset after successful save
+    waEditInflightUploads = 0;
     closeWAEditModal(); renderWA();
     showToast('Saved!', 'Content updated successfully', 'success');
   }catch(e){
     console.error(e);
     showToast('Save Failed', 'Could not save changes: '+e.message, 'error');
+  } finally {
+    document.getElementById('wa-editSave').disabled = false;
   }
 });
 
@@ -1720,40 +1639,69 @@ document.getElementById('wa-clearAdd').addEventListener('click',resetWAAdd);
 function resetWAAdd(){
   waTitleInput.value=''; waCategoryInput.value=waCategories[0]; waContentInput.value=''; waTagsInput.value='';
   document.getElementById('wa-fileUpload').value = '';
-  document.getElementById('wa-uploadStatus').innerHTML = '';
-  uploadedFiles = [];
+  document.getElementById('wa-uploadStatus').textContent = '';
+  addAttachments = [];
+  inflightUploads = 0;
   waWaPreview.innerHTML='(start typing above)'; updateWASaveDisabled();
 }
+
 function updateWASaveDisabled(){
   const valid=(waTitleInput.value||'').trim() && (waContentInput.value||'').trim();
-  waSaveAdd.disabled = !valid;
+  waSaveAdd.disabled = inflightUploads > 0 || !valid;
 }
+
 waContentInput.addEventListener('input',()=>{ waWaPreview.innerHTML=whatsappPreviewHTML(toWhatsApp(waContentInput.value||'')); updateWASaveDisabled(); });
 // Enable formatted paste for add textarea
 handleFormattedPaste(waContentInput);
 waTitleInput.addEventListener('input',updateWASaveDisabled);
 
-// Auto-upload files when selected (Add modal)
-document.getElementById('wa-fileUpload').addEventListener('change', async function() {
-  console.log('=== File input changed (Add modal) ===');
-  console.log('Files selected:', this.files.length);
+// File upload for Add modal
+document.getElementById('wa-fileUpload').addEventListener('change', async function(e) {
+  const files = Array.from(e.target.files || []);
+  if(!files.length) return;
+
   const statusEl = document.getElementById('wa-uploadStatus');
-  console.log('Status element found:', !!statusEl);
-  if(this.files.length > 0) {
-    console.log('Starting upload...');
-    uploadedFiles = await uploadFilesToDrive(this, statusEl);
-    console.log('Upload complete, uploaded files:', uploadedFiles);
-  } else {
-    console.log('No files selected');
+  inflightUploads += files.length;
+  updateWASaveDisabled();
+  statusEl.textContent = `Uploading ${inflightUploads} file(s)…`;
+
+  for(const file of files) {
+    try {
+      const base64 = await fileToBase64(file);
+      const res = await fetch(DRIVE_APP_SCRIPT, {
+        method: 'POST',
+        body: JSON.stringify({
+          files: [{
+            name: file.name,
+            mimeType: file.type || 'application/octet-stream',
+            dataBase64: base64
+          }]
+        })
+      });
+
+      const j = await res.json();
+      if(!res.ok || !j.success) throw new Error(j.error || 'Upload failed');
+
+      const f = j.files[0];
+      addAttachments.push({ id: f.id, name: f.name, url: f.url });
+      statusEl.textContent = `${addAttachments.length} file(s) uploaded`;
+    } catch(err) {
+      console.error(err);
+      showToast('Upload Error', `Failed to upload ${file.name}: ${err.message}`, 'error');
+    } finally {
+      inflightUploads--;
+      statusEl.textContent = inflightUploads ? `Uploading ${inflightUploads}…` : `${addAttachments.length} file(s) ready`;
+      updateWASaveDisabled();
+    }
   }
+  this.value = '';
 });
 
 waSaveAdd.addEventListener('click', async ()=>{
+  if(inflightUploads > 0) return;
+
   try{
     waSaveAdd.disabled=true;
-
-    // Use already uploaded files
-    const attachments = uploadedFiles || [];
 
     const payload = {
       title:(waTitleInput.value||'').trim(),
@@ -1763,7 +1711,7 @@ waSaveAdd.addEventListener('click', async ()=>{
       tags:(waTagsInput.value||'').split(',').map(t=>t.trim()).filter(Boolean),
       dateCreated:new Date().toISOString().slice(0,10),
       useCount:0,
-      attachments: attachments
+      attachments: addAttachments.slice()
     };
     await createWAItem(payload); closeWAAdd(); await syncWAContents();
     showToast('Added!', 'Content created successfully', 'success');
