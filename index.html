@@ -736,46 +736,88 @@ function htmlToWhatsApp(html) {
   function isBlockElement(node) {
     if (node.nodeType !== Node.ELEMENT_NODE) return false;
     const tagName = node.tagName.toLowerCase();
-    return ['p', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'li', 'ul', 'ol', 'blockquote', 'br'].includes(tagName);
+    return ['p', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote'].includes(tagName);
   }
 
   // Collect text segments with their formatting
   const segments = [];
 
-  function collectSegments(node) {
+  function collectSegments(node, inList = false) {
     if (node.nodeType === Node.TEXT_NODE) {
       const text = node.textContent;
       if (text) {
         const formatting = getFormatting(node);
-        segments.push({ text, formatting });
+        segments.push({ text, formatting, type: 'text' });
       }
     } else if (node.nodeType === Node.ELEMENT_NODE) {
       const tagName = node.tagName.toLowerCase();
 
       // Handle line breaks
       if (tagName === 'br') {
-        segments.push({ text: '\n', formatting: { bold: false, italic: false, strikethrough: false } });
+        segments.push({ text: '\n', formatting: { bold: false, italic: false, strikethrough: false }, type: 'br' });
         return;
       }
 
-      // Handle code blocks
-      if (tagName === 'code' || tagName === 'pre') {
+      // Handle code blocks and inline code
+      if (tagName === 'code') {
+        // Check if it's inside a <pre> (block code) or standalone (inline code)
+        let parent = node.parentNode;
+        let isInPre = false;
+        while (parent && parent !== tempDiv) {
+          if (parent.tagName && parent.tagName.toLowerCase() === 'pre') {
+            isInPre = true;
+            break;
+          }
+          parent = parent.parentNode;
+        }
+
+        if (!isInPre) {
+          // Inline code
+          let text = node.textContent;
+          segments.push({ text: '`' + text + '`', formatting: { bold: false, italic: false, strikethrough: false }, type: 'code' });
+          return;
+        }
+      }
+
+      if (tagName === 'pre') {
+        // Block code
         let text = node.textContent;
-        const marker = tagName === 'pre' ? '```' : '`';
-        segments.push({ text: marker + text + marker, formatting: { bold: false, italic: false, strikethrough: false } });
+        segments.push({ text: '```\n' + text + '\n```', formatting: { bold: false, italic: false, strikethrough: false }, type: 'pre' });
         return;
       }
 
-      // Process children
+      // Handle list items
+      if (tagName === 'li') {
+        segments.push({ text: '• ', formatting: { bold: false, italic: false, strikethrough: false }, type: 'bullet' });
+        for (let child of node.childNodes) {
+          collectSegments(child, true);
+        }
+        segments.push({ text: '\n', formatting: { bold: false, italic: false, strikethrough: false }, type: 'li-end' });
+        return;
+      }
+
+      // Handle lists (ul/ol)
+      if (tagName === 'ul' || tagName === 'ol') {
+        for (let child of node.childNodes) {
+          collectSegments(child, true);
+        }
+        // Add extra line break after list
+        if (segments.length > 0 && segments[segments.length - 1].text !== '\n') {
+          segments.push({ text: '\n', formatting: { bold: false, italic: false, strikethrough: false }, type: 'list-end' });
+        }
+        return;
+      }
+
+      // Process children for other elements
       for (let child of node.childNodes) {
-        collectSegments(child);
+        collectSegments(child, inList);
       }
 
       // Add line break after block elements
       if (isBlockElement(node) && segments.length > 0) {
         const lastSeg = segments[segments.length - 1];
         if (lastSeg && !lastSeg.text.endsWith('\n')) {
-          segments.push({ text: '\n', formatting: { bold: false, italic: false, strikethrough: false } });
+          segments.push({ text: '\n', formatting: { bold: false, italic: false, strikethrough: false }, type: 'block-end' });
         }
       }
     }
@@ -790,6 +832,12 @@ function htmlToWhatsApp(html) {
   for (let i = 0; i < segments.length; i++) {
     const segment = segments[i];
     const nextFormatting = segment.formatting;
+
+    // Skip formatting changes for special segments (code, bullets, line breaks)
+    if (segment.type === 'code' || segment.type === 'pre' || segment.type === 'bullet' || segment.type === 'br' || segment.type === 'li-end' || segment.type === 'list-end' || segment.type === 'block-end') {
+      result += segment.text;
+      continue;
+    }
 
     // Close formatting that's ending
     if (currentFormatting.strikethrough && !nextFormatting.strikethrough) {
@@ -825,8 +873,15 @@ function htmlToWhatsApp(html) {
   if (currentFormatting.italic) result += '_';
   if (currentFormatting.bold) result += '*';
 
-  // Clean up
-  result = result.replace(/\n{3,}/g, '\n\n').trim();
+  // Normalize whitespace
+  // 1. Strip trailing spaces from each line
+  result = result.split('\n').map(line => line.trimEnd()).join('\n');
+
+  // 2. Collapse 3+ consecutive newlines into at most 2 (leaving 1 blank line)
+  result = result.replace(/\n{3,}/g, '\n\n');
+
+  // 3. Trim leading/trailing whitespace from entire result
+  result = result.trim();
 
   return result;
 }
