@@ -681,6 +681,95 @@ function applyTextFormat(textareaId, format){
   textarea.dispatchEvent(new Event('input'));
 }
 
+/* ====== HTML TO WHATSAPP FORMAT CONVERTER ====== */
+function htmlToWhatsApp(html) {
+  // Create a temporary div to parse HTML
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = html;
+
+  // Recursive function to convert HTML nodes to WhatsApp format
+  function processNode(node) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      return node.textContent;
+    }
+
+    if (node.nodeType === Node.ELEMENT_NODE) {
+      let text = '';
+      for (let child of node.childNodes) {
+        text += processNode(child);
+      }
+
+      const tagName = node.tagName.toLowerCase();
+
+      // Convert HTML tags to WhatsApp format
+      switch(tagName) {
+        case 'strong':
+        case 'b':
+          return `*${text}*`;
+        case 'em':
+        case 'i':
+          return `_${text}_`;
+        case 's':
+        case 'strike':
+        case 'del':
+          return `~${text}~`;
+        case 'code':
+          return `\`${text}\``;
+        case 'pre':
+          return `\`\`\`${text}\`\`\``;
+        case 'br':
+          return '\n';
+        case 'p':
+        case 'div':
+          // Add line break after paragraphs/divs but avoid double breaks
+          return text + '\n';
+        default:
+          return text;
+      }
+    }
+
+    return '';
+  }
+
+  let result = processNode(tempDiv);
+  // Clean up multiple consecutive line breaks
+  result = result.replace(/\n{3,}/g, '\n\n').trim();
+  return result;
+}
+
+/* ====== PASTE HANDLER FOR FORMATTED TEXT ====== */
+function handleFormattedPaste(textarea) {
+  textarea.addEventListener('paste', (e) => {
+    // Check if clipboard has HTML content
+    const clipboardData = e.clipboardData || window.clipboardData;
+    const htmlData = clipboardData.getData('text/html');
+
+    if (htmlData) {
+      // Prevent default paste
+      e.preventDefault();
+
+      // Convert HTML to WhatsApp format
+      const whatsappText = htmlToWhatsApp(htmlData);
+
+      // Insert converted text at cursor position
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const beforeText = textarea.value.substring(0, start);
+      const afterText = textarea.value.substring(end);
+
+      textarea.value = beforeText + whatsappText + afterText;
+
+      // Set cursor position after inserted text
+      const newCursorPos = start + whatsappText.length;
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+
+      // Trigger input event to update preview
+      textarea.dispatchEvent(new Event('input'));
+    }
+    // If no HTML data, let default paste behavior happen (plain text)
+  });
+}
+
 // Add event listeners for all format buttons
 document.addEventListener('click', (e) => {
   const btn = e.target.closest('.format-btn');
@@ -1296,6 +1385,8 @@ document.getElementById('wa-editClose').addEventListener('click', closeWAEditMod
 document.getElementById('wa-editCancel').addEventListener('click', closeWAEditModal);
 function updateWAEditPreview(){ waEditPreview.innerHTML = whatsappPreviewHTML(toWhatsApp(waEditContent.value||'')); }
 waEditContent.addEventListener('input', updateWAEditPreview);
+// Enable formatted paste for edit textarea
+handleFormattedPaste(waEditContent);
 
 document.getElementById('wa-editSave').addEventListener('click', async ()=>{
   if(!waEditItem) return;
@@ -1356,6 +1447,8 @@ function updateWASaveDisabled(){
   waSaveAdd.disabled = !valid;
 }
 waContentInput.addEventListener('input',()=>{ waWaPreview.innerHTML=whatsappPreviewHTML(toWhatsApp(waContentInput.value||'')); updateWASaveDisabled(); });
+// Enable formatted paste for add textarea
+handleFormattedPaste(waContentInput);
 waTitleInput.addEventListener('input',updateWASaveDisabled);
 
 waSaveAdd.addEventListener('click', async ()=>{
